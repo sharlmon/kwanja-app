@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0f0c">
+  <title>Kwanja | Tech shop and repair ledger</title>
+  <meta name="description" content="Track repair deposits, device sales on credit, and unpaid balances for tech shops in Nairobi and Westlands.">
+  <link rel="icon" href="logo/kwanja-mark.svg" type="image/svg+xml">
+  <link rel="preload" href="fonts/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="stylesheet" href="ledger.84a4a07a93ba0db3.css">
+  <link rel="stylesheet" href="public.aea5cc70a7d98e0f.css">
+  <link rel="stylesheet" href="ticket.bb70bb15b8baf249.css">
+  <script src="config.e24d0cc4c4e9f287.js"></script>
+  <script src="language.6e368d312a051adc.js" defer></script>
+  <script src="ledger.324f731473cedc7e.js" defer></script>
+</head>
+<body class="is-welcome">
+  <svg xmlns="http://www.w3.org/2000/svg" class="icon-library" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 256 256"><path d="M219.31,108.68l-80-80a16,16,0,0,0-22.62,0l-80,80A15.87,15.87,0,0,0,32,120v96a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V160h32v56a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V120A15.87,15.87,0,0,0,219.31,108.68ZM208,208H160V152a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8v56H48V120l80-80,80,80Z"/></symbol>
+    <symbol id="i-ledger" viewBox="0 0 256 256"><path d="M184,112a8,8,0,0,1-8,8H112a8,8,0,0,1,0-16h64A8,8,0,0,1,184,112Zm-8,24H112a8,8,0,0,0,0,16h64a8,8,0,0,0,0-16Zm48-88V208a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V48A16,16,0,0,1,48,32H208A16,16,0,0,1,224,48ZM48,208H72V48H48Zm160,0V48H88V208H208Z"/></symbol>
+    <symbol id="i-people" viewBox="0 0 256 256"><path d="M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z"/></symbol>
+    <symbol id="i-download" viewBox="0 0 256 256"><path d="M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0Zm-101.66,5.66a8,8,0,0,0,11.32,0l40-40a8,8,0,0,0-11.32-11.32L136,124.69V32a8,8,0,0,0-16,0v92.69L93.66,98.34a8,8,0,0,0-11.32,11.32Z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 256 256"><path d="M228,128a12,12,0,0,1-12,12H140v76a12,12,0,0,1-24,0V140H40a12,12,0,0,1,0-24h76V40a12,12,0,0,1,24,0v76h76A12,12,0,0,1,228,128Z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 256 256"><path d="M184.49,136.49l-80,80a12,12,0,0,1-17-17L159,128,87.51,56.49a12,12,0,1,1,17-17l80,80A12,12,0,0,1,184.49,136.49Z"/></symbol>
+    <symbol id="i-in" viewBox="0 0 256 256"><path d="M200.49,72.48,93,180h75a12,12,0,0,1,0,24H64a12,12,0,0,1-12-12V88a12,12,0,0,1,24,0v75L183.51,55.51a12,12,0,0,1,17,17Z"/></symbol>
+    <symbol id="i-out" viewBox="0 0 256 256"><path d="M204,64V168a12,12,0,0,1-24,0V93L72.49,200.49a12,12,0,0,1-17-17L163,76H88a12,12,0,0,1,0-24H192A12,12,0,0,1,204,64Z"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 256 256"><path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z"/></symbol>
+    <symbol id="i-close" viewBox="0 0 256 256"><path d="M208.49,191.51a12,12,0,0,1-17,17L128,145,64.49,208.49a12,12,0,0,1-17-17L111,128,47.51,64.49a12,12,0,0,1,17-17L128,111l63.51-63.52a12,12,0,0,1,17,17L145,128Z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 256 256"><path d="M232.49,80.49l-128,128a12,12,0,0,1-17,0l-56-56a12,12,0,1,1,17-17L96,183,215.51,63.51a12,12,0,0,1,17,17Z"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 256 256"><path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"/></symbol>
+    <symbol id="i-eyeoff" viewBox="0 0 256 256"><path d="M53.92,34.62A8,8,0,1,0,42.08,45.38L61.32,66.55C25,88.84,9.38,123.2,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208a127.11,127.11,0,0,0,52.07-10.83l22,24.21a8,8,0,1,0,11.84-10.76Zm47.33,75.84,41.67,45.85a32,32,0,0,1-41.67-45.85ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.16,133.16,0,0,1,25,128c4.69-8.79,19.66-33.39,47.35-49.38l18,19.75a48,48,0,0,0,63.66,70l14.73,16.2A112,112,0,0,1,128,192Zm6-95.43a8,8,0,0,1,3-15.72,48.16,48.16,0,0,1,38.77,42.64,8,8,0,0,1-7.22,8.71,6.39,6.39,0,0,1-.75,0,8,8,0,0,1-8-7.26A32.09,32.09,0,0,0,134,96.57Zm113.28,34.69c-.42.94-10.55,23.37-33.36,43.8a8,8,0,1,1-10.67-11.92A132.77,132.77,0,0,0,231.05,128a133.15,133.15,0,0,0-23.12-30.77C185.67,75.19,158.78,64,128,64a118.37,118.37,0,0,0-19.36,1.57A8,8,0,1,1,106,49.79,134,134,0,0,1,128,48c34.88,0,66.57,13.26,91.66,38.35,18.83,18.83,27.3,37.62,27.65,38.41A8,8,0,0,1,247.31,131.26Z"/></symbol>
+    <symbol id="i-back" viewBox="0 0 256 256"><path d="M216,40H68.53a16.08,16.08,0,0,0-13.72,7.77L9.14,123.88a8,8,0,0,0,0,8.24l45.67,76.11A16.08,16.08,0,0,0,68.53,216H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40ZM61.67,204.12,68.53,200h0ZM216,200H68.53l-43.2-72,43.2-72H216ZM106.34,146.34,124.69,128l-18.35-18.34a8,8,0,0,1,11.32-11.32L136,116.69l18.34-18.35a8,8,0,0,1,11.32,11.32L147.31,128l18.35,18.34a8,8,0,0,1-11.32,11.32L136,139.31l-18.34,18.35a8,8,0,0,1-11.32-11.32Z"/></symbol>
+    <symbol id="i-whatsapp" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></symbol>
+    <symbol id="i-apple" viewBox="0 0 24 24"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></symbol>
+    <symbol id="i-google" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></symbol>
+  </svg>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="shell">
+    <main id="main" class="main" tabindex="-1">
+      <header class="topbar">
+        <a class="brand" href="#overview" aria-label="Kwanja overview"><img src="logo/kwanja-lockup.svg" alt="Kwanja"></a>
+        <span class="spacer"></span>
+        <button class="round privacy" id="overview-privacy" type="button" data-action="privacy" aria-pressed="false" aria-label="Hide amounts" hidden><svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg></button>
+        <a class="mini settings-link" href="#settings" data-nav="settings">Settings</a>
+      </header>
+
+      <p id="workspace-offline" class="connection-status offline-status" role="status" hidden>You’re offline. You can view and export current results from the ledger already loaded. Reconnect to save changes, import files, or export the full ledger.</p>
+      <div id="connection-status" class="connection-status" role="status" hidden></div>
+
+      <div id="overview-view">
+        <h1 class="sr-only" id="page-title">Overview</h1>
+        <p class="sr-only" id="page-context"></p>
+        <section id="guide" class="guide" aria-labelledby="guide-title" hidden></section>
+        <section class="wallets" aria-label="Ledger balances">
+          <a class="wallet-card wallet-in" href="#ledger/receivable">
+            <span class="wallet-label"><span class="wallet-icon"><svg class="icon" aria-hidden="true"><use href="#i-in"/></svg></span>Owed to you</span>
+            <strong class="wallet-value"><small>KES</small> <span id="receivable-total"></span></strong>
+            <span class="wallet-footer"><span id="receivable-count"></span><span class="wallet-overdue" id="overdue-chip" hidden></span></span>
+            <span class="wallet-arrow"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></span>
+          </a>
+          <a class="wallet-card wallet-out" href="#ledger/payable">
+            <span class="wallet-label"><span class="wallet-icon"><svg class="icon" aria-hidden="true"><use href="#i-out"/></svg></span>You owe</span>
+            <strong class="wallet-value"><small>KES</small> <span id="payable-total"></span></strong>
+            <span class="wallet-footer" id="payable-count"></span>
+            <span class="wallet-arrow"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></span>
+          </a>
+          <p class="wallet-net"><span>Net outstanding</span><strong id="net-amount"></strong></p>
+        </section>
+
+        <section class="banner" id="banner" aria-live="polite"></section>
+
+        <section class="section" id="follow-section" aria-labelledby="chase-title">
+          <div class="section-head"><h2 id="chase-title">Follow up</h2><a class="more" id="follow-all" href="#ledger/followup" hidden>View queue</a><button class="mini" id="legacy-follow-add" type="button" data-action="new"><svg class="icon"><use href="#i-plus"/></svg>Add</button></div>
+          <div id="follow-list" class="chase-row"></div>
+        </section>
+
+        <section class="section" id="recent-section" aria-labelledby="recent-title">
+          <div class="section-head"><h2 id="recent-title">Recent entries</h2><a class="more" href="#ledger">See all<svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></a></div>
+          <div id="recent-list" class="list"></div>
+        </section>
+      </div>
+
+      <section id="ledger-view" aria-label="Ledger entries" hidden>
+        <h1 class="view-title">Ledger</h1>
+        <p class="view-sub" id="ledger-sub" role="status"></p>
+        <form id="ledger-search" role="search">
+          <label class="search"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><input id="search" type="search" placeholder="Name, phone, or reference" aria-label="Search ledger by name, phone, or reference" autocomplete="off"></label>
+        </form>
+        <div id="filters" class="filters" aria-label="Filter entries">
+          <a href="#ledger" data-filter="all">All</a>
+          <a href="#ledger/receivable" data-filter="receivable">Owed to you</a>
+          <a href="#ledger/payable" data-filter="payable">You owe</a>
+          <a href="#ledger/paid" data-filter="paid">Settled</a>
+          <a href="#ledger/followup" data-filter="followup" id="follow-filter" hidden>Follow-up due</a>
+        </div>
+        <div class="ledger-tools" aria-label="Ledger files" role="group">
+          <button class="mini" type="button" data-action="import" id="import-entry" hidden>Import CSV</button>
+          <button class="mini" type="button" data-action="export">Export CSV</button>
+        </div>
+        <div id="ledger-list" class="cards"></div>
+      </section>
+
+      <section id="contacts-view" aria-label="Contacts" hidden><h1 class="view-title">Contacts</h1><p class="view-sub" id="contacts-sub"></p><div id="contacts-list"></div></section>
+      <section id="settings-view" aria-labelledby="settings-title" hidden>
+        <h1 class="view-title" id="settings-title">Settings</h1>
+        <div class="contact-group settings-card"><h2>Language</h2>
+        </div>
+        <div class="contact-group settings-card"><h2>Display</h2>
+          <button class="button" type="button" data-action="privacy" aria-pressed="false">Hide amounts</button>
+        </div>
+        <div id="account" class="contact-group account" hidden><h2>Account</h2><p class="help" id="account-email"></p><button class="button" type="button" data-action="account-security" hidden>Manage password</button><button class="button" type="button" data-action="signout">Sign out</button></div>
+        <div class="workspace-tools">
+          <button class="button" type="button" data-action="walkthrough">Replay walkthrough</button>
+          <button class="button" type="button" data-action="install-app" hidden><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>Install Kwanja</button>
+        </div>
+      </section>
+    </main>
+
+    <nav class="dock" aria-label="Workspace">
+      <a href="#overview" data-nav="overview" aria-label="Overview"><svg class="icon"><use href="#i-home"/></svg><span>Overview</span></a>
+      <a href="#ledger" data-nav="ledger" aria-label="Ledger"><svg class="icon"><use href="#i-ledger"/></svg><span>Ledger</span></a>
+      <button class="fab" type="button" data-action="new" aria-label="Add debt"><svg class="icon"><use href="#i-plus"/></svg></button>
+      <a href="#contacts" data-nav="contacts" aria-label="Contacts"><svg class="icon"><use href="#i-people"/></svg><span>Contacts</span></a>
+      <button class="dock-search" type="button" data-action="find-entry" aria-label="Find a customer or job"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><span>Search</span></button>
+    </nav>
+  </div>
+
+  <section id="welcome" class="welcome" aria-label="Kwanja website">
+    <p id="public-offline" class="public-width connection-status offline-status" role="status" hidden>You’re offline. You can explore Kwanja and try the sample repair. Reconnect to access your shop ledger.</p>
+    <div data-step="intro" class="public-site" id="home">
+      <header class="public-header">
+        <div class="public-bar">
+          <a class="brand" href="#home" aria-label="Kwanja home"><img src="logo/kwanja-lockup.svg" alt="Kwanja"></a>
+          <nav class="public-nav" aria-label="About Kwanja"><a href="#how-it-works">How it works</a><a href="#about">About us</a><a href="#questions">FAQ</a></nav>
+          <div class="public-account"><select class="language-choice" data-language aria-label="Language"><option value="en" lang="en">English</option><option value="sw" lang="sw">Kiswahili</option></select><a class="public-login" href="#login">Log in</a><a class="pill primary" href="#signup">Create account</a></div>
+        </div>
+      </header>
+      <main id="public-main" tabindex="-1">
+        <section class="public-width public-hero" aria-labelledby="public-title">
+          <div class="hero-copy">
+            <p class="eyebrow"><span class="lime-dot"></span>For tech shops and repair shops in Nairobi</p>
+            <select class="language-choice" data-language aria-label="Language"><option value="en" lang="en">English</option><option value="sw" lang="sw">Kiswahili</option></select>
+            <h1 id="public-title" tabindex="-1">A deposit today. <mark>The balance at pickup.</mark></h1>
+            <p class="lede">Each job keeps its deposit, pickup date and unpaid balance on one ticket, so you know what a customer owes before you hand the device back.</p>
+            <div class="hero-actions"><a class="pill primary large" href="#signup">Create account</a><a class="pill light large" href="#repair-demo">Try a repair demo</a></div>
+            <button class="pill public-install" type="button" data-action="install-app" hidden><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>Install Kwanja</button>
+            <button class="public-demo link" type="button" data-action="skip" hidden>Explore the demo ledger</button>
+          </div>
+          <figure class="sample" aria-label="Example repair ticket with a deposit and a balance to collect">
+            <div class="ticket receivable">
+              <div class="ticket-stub"><b class="ticket-ref">WS-014</b><span class="ticket-date">17 Nov</span><span class="ticket-dir">Owed to you</span></div>
+              <div class="ticket-body">
+                <span class="ticket-name">Amina Mwangi</span>
+                <span class="ticket-desc">Laptop screen replacement</span>
+                <dl class="ticket-math"><div><dt>Total</dt><dd>8,200</dd></div><div><dt>Deposit</dt><dd>&minus; 2,000</dd></div><div class="bal"><dt>Balance</dt><dd>KES 6,200</dd></div></dl>
+                <span class="ticket-foot">Pickup 21 Nov</span>
+              </div>
+              <span class="stamp overdue">Overdue</span>
+            </div>
+            <figcaption><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg>Review a reminder before sending it on WhatsApp</figcaption>
+          </figure>
+        </section>
+<section class="public-width public-section" id="how-it-works" aria-labelledby="how-heading">
+          <div class="section-intro"><p class="eyebrow"><span class="lime-dot"></span>How it works</p><h2 id="how-heading">One ticket for each job.</h2><p class="section-lede">The deposit, the balance and the follow-up stay together.</p></div>
+          <div class="how-grid">
+            <div class="public-steps">
+            <article><span class="step-badge"><svg class="icon" aria-hidden="true"><use href="#i-ledger"/></svg></span><h3>Record the job or sale</h3><p>Add the customer, total, and any deposit already paid. Keep the job reference, pickup date, and payment due date together.</p></article>
+            <article><span class="step-badge"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg></span><h3>Chase with the right amount</h3><p>See which customers are due for a follow-up. Open a WhatsApp draft with the outstanding amount and note when they promise to pay.</p></article>
+            <article><span class="step-badge"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><h3>Record the payment</h3><p>Enter a payment yourself or paste a supported M-Pesa SMS and review the details. Partial payments reduce the balance as you record them.</p><p class="step-note"><img class="brand-mark" src="brands/mpesa.svg" alt="M-Pesa">Reads M-Pesa confirmation messages</p></article>
+          </div>
+            
+          </div>
+        </section>
+        <section class="public-width public-section anatomy" id="anatomy" aria-labelledby="anatomy-title">
+          <div class="section-intro"><p class="eyebrow">An example job</p><h2 id="anatomy-title">A phone that stopped charging.</h2><p class="section-lede">A deposit at the counter, a part ordered, a balance at pickup. One ticket follows the job from the bench to the till.</p></div>
+          <div class="anatomy-stage">
+            
+            <div class="ticket receivable anatomy-ticket" role="img" aria-label="Repair ticket WS-019 for Brian Otieno. Total 3,500 shillings, deposit 1,000, balance 2,500.">
+              <div class="ticket-stub"><b class="ticket-ref">WS-019</b><span class="ticket-date">24 Nov</span><span class="ticket-dir">Owed to you</span></div>
+              <div class="ticket-body">
+                <span class="ticket-name">Brian Otieno</span>
+                <span class="ticket-desc">Phone charging fault</span>
+                <dl class="ticket-math"><div><dt>Total</dt><dd>3,500</dd></div><div><dt>Deposit</dt><dd>&minus; 1,000</dd></div><div class="bal"><dt>Balance</dt><dd>KES 2,500</dd></div></dl>
+                <span class="ticket-foot">Pickup Fri</span>
+              </div>
+            </div>
+            <ol class="anatomy-steps">
+              <li><b>Mon</b><span>Brought in. Fault found at the bench. KES 1,000 deposit taken.</span></li>
+              <li><b>Wed</b><span>Part replaced. The customer gets a WhatsApp message.</span></li>
+              <li><b>Fri</b><span>Picked up. KES 2,500 balance paid by M-Pesa. Ticket settled.</span></li>
+            </ol>
+          </div>
+        </section>
+        <section class="public-width public-section" id="repair-demo" aria-labelledby="repair-demo-title">
+          <div class="split"><div class="section-intro"><p class="eyebrow">Try it</p><h2 id="repair-demo-title">Try a repair balance</h2><p class="section-lede">Use a sample job before creating an account.</p></div>
+          <div class="repair-demo">
+            <div class="repair-demo-job"><strong>Laptop screen replacement</strong><span>Amina Mwangi · Job WS-014</span><span>KES 8,200 total · KES 2,000 deposit already paid</span></div>
+            <p class="repair-demo-balance" id="repair-demo-balance" role="status">Balance KES 6,200</p>
+            <div class="hero-actions">
+              <button class="pill primary" type="button" data-action="repair-demo-payment">Record KES 2,000 payment</button>
+              <button class="pill light" type="button" data-action="repair-demo-reminder">Preview reminder</button>
+              <button class="link" type="button" data-action="repair-demo-reset" hidden>Reset example</button>
+            </div>
+            <div class="repair-demo-reminder" id="repair-demo-reminder" hidden><strong>WhatsApp draft</strong><p id="repair-demo-message"></p></div>
+          </div>
+        </div></section>
+        <section class="public-width bench-band" aria-labelledby="bench-title">
+          <div class="bench">
+            <div class="bench-copy"><h2 id="bench-title">A shop full of stock. Who has paid?</h2><p>Every sale on credit gets a ticket with its deposit and balance, so the stock that left the shelf is not also the debt you forget.</p><a class="pill primary large" href="#signup">Create account</a></div>
+          </div>
+        </section>
+        <section class="public-width" id="about" aria-labelledby="about-heading">
+          <div class="public-dark about-panel">
+            
+            <p class="eyebrow on-dark"><span class="lime-dot"></span>About Kwanja</p>
+            <h2 id="about-heading">Built for Nairobi’s tech and repair shops</h2>
+            <div class="about-copy"><p>A customer leaves a deposit for a screen replacement and pays the balance at pickup. Another takes a refurbished laptop on credit. A parts supplier gives you a week to pay. Kwanja keeps these amounts together.</p>
+            <p>Kwanja is for phone and computer repair shops, device retailers, and parts sellers across Nairobi, including Westlands. It works in Kenyan shillings and fits the way these shops already use WhatsApp and M-Pesa.</p></div>
+          </div>
+        </section>
+        <section class="public-width public-section" id="questions" aria-labelledby="faq-heading">
+          <div class="split"><div class="section-intro"><p class="eyebrow"><span class="lime-dot"></span>Questions</p><h2 id="faq-heading">Common questions</h2><p class="section-lede">Straight answers before you sign up.</p></div>
+          <div class="public-faq">
+            <details><summary>Does Kwanja collect or hold money?</summary><p>Payments happen through your usual channels. Kwanja records the amounts and helps you prepare reminders.</p></details>
+            <details><summary>Can I track supplier debts too?</summary><p>Yes. The ledger keeps money owed to you separate from money you owe. Both support partial payments.</p></details>
+            <details><summary>Do I need to connect my M-Pesa account?</summary><p>No. You can enter payments yourself or paste a supported confirmation SMS. You review what Kwanja extracts before a payment is recorded.</p></details>
+            <details><summary>Can I download my records?</summary><p>Yes. Export the ledger to CSV for your records or to open in a spreadsheet.</p></details>
+          </div>
+        </div></section>
+        <section class="public-width public-cta" aria-labelledby="cta-heading"><h2 id="cta-heading">Record your first repair balance.</h2><a class="pill primary large" href="#signup">Create account</a></section>
+        
+        
+        
+        
+        
+        
+        
+      </main>
+      <footer class="public-footer"><div class="public-width"><a class="brand" href="#home" aria-label="Kwanja home"><img src="logo/kwanja-lockup.svg" alt="Kwanja"></a><a href="#about">About us</a><a href="#questions">FAQ</a><a href="#login">Log in</a></div></footer>
+    </div>
+
+    <div class="auth-layout" id="auth-layout" hidden>
+      <aside class="auth-side">
+        <a class="brand" href="#home" aria-label="Kwanja home"><img src="logo/kwanja-lockup-mono-black.svg" alt="Kwanja"></a>
+        <div class="auth-art" aria-hidden="true">
+          <div class="w-card c3"><b>City Parts Supply</b><span>KES 18,400</span></div>
+          <div class="w-card c2"><b>Metro IT Services</b><span>KES 28,400</span></div>
+          <div class="w-card c1"><b>Amina Mwangi</b><span>KES 6,200</span><i>Overdue</i></div>
+        </div>
+        <div class="auth-pitch"><strong>Your business ledger</strong><p>Track repair deposits, device credit and parts bills.</p></div>
+      </aside>
+      <div class="auth-content">
+        <div class="auth-top">
+          <a class="auth-back" href="#home"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg>Back to Kwanja</a>
+          <select class="language-choice" data-language aria-label="Language"><option value="en" lang="en">English</option><option value="sw" lang="sw">Kiswahili</option></select>
+        </div>
+        <div class="auth-card">
+          <div class="w-step" data-step="email" hidden>
+            <h1 tabindex="-1" id="auth-heading">Create your account</h1>
+            <p class="w-sub" id="auth-description">We will send a six-digit code to verify your email.</p>
+            <div class="auth-providers" id="auth-providers" hidden>
+              <button class="auth-provider" type="button" data-action="provider" data-provider="google" hidden><svg class="icon brand" aria-hidden="true"><use href="#i-google"/></svg>Continue with Google</button>
+              <button class="auth-provider" type="button" data-action="provider" data-provider="apple" hidden><svg class="icon brand" aria-hidden="true"><use href="#i-apple"/></svg>Continue with Apple</button>
+              <p class="auth-or"><span>or use your email</span></p>
+            </div>
+            <form class="auth-form" data-form="email">
+              <label class="field"><span>Email address</span><input name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@business.co.ke" required></label>
+              <label class="field" id="auth-password-field" hidden><span>Password</span><input name="password" type="password" autocomplete="current-password" disabled></label>
+              <p class="form-error" role="alert" hidden></p>
+              <button class="pill primary large block" type="submit">Send code</button>
+            </form>
+            <div class="auth-code-actions" id="password-options" hidden><button class="link" type="button" data-action="switch-login-method">Use an email code</button><button class="link" type="button" data-action="password-recovery">Forgot password?</button></div>
+            <p class="auth-switch"><span id="auth-switch-copy">Already have an account?</span> <a class="link" id="auth-switch-link" href="#login">Log in</a></p>
+            <p class="demo-only auth-demo-note">Demo mode. No email is sent and any six digits work.</p>
+          </div>
+          <div class="w-step" data-step="code" hidden>
+            <h1 tabindex="-1" id="auth-code-heading">Check your email</h1>
+            <p class="w-sub">Enter the six-digit code sent to <b id="otp-email"></b>. <span class="demo-only">For the demo, enter any six digits.</span></p>
+            <form class="auth-form" data-form="code">
+              <label class="field"><span>Verification code</span><input class="code-input" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000" required></label>
+              <p class="form-error" role="alert" hidden></p>
+              <button class="pill primary large block" type="submit">Verify code</button>
+            </form>
+            <div class="auth-code-actions"><button class="link" type="button" data-action="change-email">Change email</button><button class="link" type="button" data-action="resend">Resend code</button></div>
+          </div>
+          <div class="w-step" data-step="business" hidden>
+            <h1 tabindex="-1">Set up your ledger</h1>
+            <p class="w-sub">Your business name appears in your ledger and in the reminders you prepare for customers.</p>
+            <form class="auth-form" data-form="business">
+              <label class="field"><span>Business name</span><input name="business" maxlength="100" autocomplete="organization" placeholder="e.g. Westlands Device Repair" required></label>
+              <p class="form-error" role="alert" hidden></p>
+              <button class="pill primary large block" type="submit">Create my ledger</button>
+            </form>
+          </div>
+          <div class="w-step" data-step="password-setup" hidden>
+            <h1 tabindex="-1">Add a password</h1>
+            <p class="w-sub">Use a password for future logins, or keep using email codes. To set one, open your account and choose Security.</p>
+            <button class="pill primary large block" type="button" data-action="account-security">Open account settings</button>
+            <p class="auth-switch"><button class="link" type="button" data-action="open-ledger">Continue to my ledger</button></p>
+          </div>
+          <div class="w-step" data-step="callback" hidden><h1 tabindex="-1">Finishing sign-in</h1><p class="w-sub">One moment while we finish signing you in.</p><p class="form-error" role="alert" hidden></p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <dialog id="dialog" aria-labelledby="dialog-title">
+    <div class="dialog-heading"><h2 id="dialog-title" tabindex="-1"></h2><button type="button" class="icon-button" data-action="close" aria-label="Close dialog"><svg class="icon"><use href="#i-close"/></svg></button></div>
+    <div id="dialog-content"></div>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
