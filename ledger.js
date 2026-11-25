@@ -262,12 +262,14 @@ function renderOverview() {
   const today = localDate();
   const queue = workshopLedger ? followUpQueue(receivable, today) : overdue;
 
-  byId('net-amount').textContent = money(receiveTotal - payTotal);
+  // Older installed pages can still request the legacy script URL during the update.
+  const walletLayout = byId('net-amount').closest('.wallet-net');
+  byId('net-amount').textContent = walletLayout ? money(receiveTotal - payTotal) : formatAmount(receiveTotal - payTotal);
   const overdueChip = byId('overdue-chip');
   overdueChip.hidden = !overdueTotal;
   overdueChip.innerHTML = overdueTotal ? `<b>${money(overdueTotal)}</b> overdue` : '';
-  byId('receivable-total').textContent = formatAmount(receiveTotal);
-  byId('payable-total').textContent = formatAmount(payTotal);
+  byId('receivable-total').textContent = walletLayout ? formatAmount(receiveTotal) : money(receiveTotal);
+  byId('payable-total').textContent = walletLayout ? formatAmount(payTotal) : money(payTotal);
   byId('receivable-count').textContent = plural(receivable.length, 'open debt');
   byId('payable-count').textContent = plural(payable.length, 'open bill');
 
@@ -1622,11 +1624,18 @@ window.addEventListener('online', () => {
   updateOfflineStatus();
   if (apiMode && authMode === 'unavailable') bootApi();
 });
-updateOfflineStatus();
-render();
-publicRoute(false);
-if (apiMode) {
-  bootApi();
-} else if (/^#(overview|ledger|contacts)(\/|$)/.test(location.hash)) {
-  try { if (localStorage.getItem(onboardedKey)) finishDemo(); } catch { /* storage unavailable */ }
+const launchUrl = new URL(location.href);
+if (pwaEnabled && navigator.onLine && document.querySelector('#overview-view .balance') && !launchUrl.searchParams.has('kwanja-refresh')) {
+  // Give a stale installed page one fresh navigation without losing its route.
+  launchUrl.searchParams.set('kwanja-refresh', 'wallets');
+  location.replace(launchUrl);
+} else {
+  updateOfflineStatus();
+  render();
+  publicRoute(false);
+  if (apiMode) {
+    bootApi();
+  } else if (/^#(overview|ledger|contacts)(\/|$)/.test(location.hash)) {
+    try { if (localStorage.getItem(onboardedKey)) finishDemo(); } catch { /* storage unavailable */ }
+  }
 }
