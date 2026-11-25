@@ -710,22 +710,28 @@ function clerkDomain(key) {
   } catch { return ''; }
 }
 
+function loadClerkScript(src, key) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = src;
+    if (key) script.dataset.clerkPublishableKey = key;
+    script.crossOrigin = 'anonymous';
+    script.onload = resolve;
+    script.onerror = () => reject(new Error('Could not load sign-in. Try again.'));
+    document.head.append(script);
+  });
+}
+
 async function startClerk(key) {
-  if (!window.Clerk) {
-    const domain = clerkDomain(key);
-    if (!domain) throw new Error('Sign-in is not configured correctly.');
-    await new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = `https://${domain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`;
-      script.dataset.clerkPublishableKey = key;
-      script.crossOrigin = 'anonymous';
-      script.onload = resolve;
-      script.onerror = () => reject(new Error('Could not load sign-in. Try again.'));
-      document.head.append(script);
-    });
-  }
+  const domain = clerkDomain(key);
+  if (!domain) throw new Error('Sign-in is not configured correctly.');
+  const sdk = !window.Clerk && loadClerkScript(`https://${domain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, key);
+  const ui = window.KWANJA_PASSWORD_AUTH === true && !window.__internal_ClerkUICtor
+    && loadClerkScript(`https://${domain}/npm/@clerk/ui@1/dist/ui.browser.js`).catch(() => {});
+  await Promise.all([sdk, ui]);
   clerk = window.Clerk;
-  await clerk.load();
+  const ClerkUI = window.__internal_ClerkUICtor;
+  await clerk.load(ClerkUI ? { ui: { ClerkUI } } : undefined);
 }
 
 function oauthUrl() {
@@ -843,10 +849,18 @@ async function beginEmail(email, intent) {
   return nextChallenge;
 }
 
-function openClerkSignIn(email) {
+async function openClerkSignIn(email) {
   const destination = oauthUrl();
   destination.hash = '#overview';
-  clerk.openSignIn({ forceRedirectUrl: destination.href, initialValues: { emailAddress: email } });
+  try {
+    if (window.__internal_ClerkUICtor) {
+      clerk.openSignIn({ forceRedirectUrl: destination.href, initialValues: { emailAddress: email } });
+    } else {
+      await clerk.redirectToSignIn({ signInFallbackRedirectUrl: destination.href });
+    }
+  } catch {
+    stepError('email', 'Could not open Clerk sign-in. Use an email code or try again.');
+  }
 }
 
 function showCodeStep(email, nextChallenge) {
@@ -876,7 +890,7 @@ async function loginWithPassword(email, password, stillOnForm) {
       return;
     }
   }
-  openClerkSignIn(email);
+  await openClerkSignIn(email);
 }
 
 function renderResend() {
@@ -942,12 +956,21 @@ async function openNewLedger() {
   if (apiReady) notify('Your ledger is ready.');
 }
 
+async function managePassword() {
+  try {
+    if (window.__internal_ClerkUICtor) clerk.openUserProfile();
+    else await clerk.redirectToUserProfile();
+  } catch {
+    notify('Could not open account settings. Try again.');
+  }
+}
+
 Object.assign(clickActions, {
   skip: finishDemo,
   'retry-auth': afterSignIn,
   signout: () => leaveSession(),
   provider: startOAuth,
-  'account-security': () => clerk.openUserProfile(),
+  'account-security': managePassword,
   'open-ledger': openNewLedger,
   'switch-login-method': () => {
     loginMethod = loginMethod === 'password' ? 'code' : 'password';
