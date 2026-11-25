@@ -238,40 +238,8 @@ dialog::before { content: ""; display: block; width: 38px; height: 4px; margin: 
 .empty-state strong { font-size: 1.2rem; font-weight: 700; letter-spacing: -.03em; }
 .empty-state p { max-width: 28ch; margin-bottom: 8px; color: var(--muted); font-size: .92rem; }
 
-/* welcome / first run */
-body.is-welcome .shell { visibility: hidden; }
-.welcome { position: fixed; inset: 0; z-index: 80; overflow-y: auto; background: linear-gradient(180deg, #f1f1f3, #e4e4e8); }
-.w-step { display: flex; flex-direction: column; max-width: 480px; min-height: 100dvh; margin: 0 auto; padding: calc(24px + env(safe-area-inset-top)) 22px calc(28px + env(safe-area-inset-bottom)); animation: rise .6s var(--ease) both; }
-.w-step[hidden] { display: none; }
-.w-step h1 { margin-top: 22px; font-size: clamp(2.2rem, 11vw, 2.9rem); font-weight: 700; letter-spacing: -.055em; line-height: 1.02; }
-.w-step h1:focus { outline: 0; }
-.w-sub { margin: 12px 0 26px; max-width: 34ch; color: var(--muted); font-size: 1rem; }
-.w-sub b { color: var(--ink); }
-.w-art { position: relative; height: 340px; margin: 6px -6px 8px; }
-.w-card { position: absolute; left: 50%; width: 78%; padding: 16px 18px; border-radius: 26px; display: grid; gap: 4px; box-shadow: 0 24px 40px -22px rgba(20, 20, 30, .5); transform-origin: 50% 100%; }
-.w-card b { font-size: .92rem; font-weight: 600; }
-.w-card span { font-size: 1.7rem; font-weight: 700; letter-spacing: -.05em; }
-.w-card i { justify-self: start; margin-top: 4px; padding: 3px 10px; border-radius: 99px; background: var(--minus); color: #fff; font-size: .7rem; font-weight: 700; font-style: normal; }
-.w-card.c3 { top: 10px; background: linear-gradient(160deg, #1a1a1c, #0b0b0c); color: #fff; transform: translateX(-50%) rotate(-7deg); }
-.w-card.c2 { top: 68px; background: var(--card); color: var(--ink); transform: translateX(-50%) rotate(4deg); }
-.w-card.c1 { top: 134px; background: linear-gradient(160deg, #cbec52, #b4d92f); color: var(--lime-ink); transform: translateX(-50%) rotate(-2deg); min-height: 128px; }
-.w-art .coin { position: absolute; right: 8px; bottom: 6px; width: 78px; height: 78px; animation: bob 3.4s ease-in-out infinite; }
-.w-actions { margin-top: auto; display: grid; gap: 14px; justify-items: center; }
-.w-actions .button { width: 100%; }
-.w-login { color: var(--muted); font-size: .94rem; }
 .link { padding: 8px 4px; border: 0; background: none; color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .link.subtle { color: var(--muted); font-weight: 600; font-size: .9rem; }
-.otp { display: flex; justify-content: center; gap: 10px; margin: 6px 0 24px; }
-.otp span { width: 46px; height: 58px; display: grid; place-items: center; border-radius: 18px; background: var(--white); box-shadow: var(--soft); font-size: 1.6rem; font-weight: 700; }
-.otp span.current { box-shadow: 0 0 0 2px var(--ink); }
-.w-step .numpad { margin-top: auto; }
-.w-step .round { align-self: flex-start; }
-@keyframes bob { 50% { transform: translateY(-8px) rotate(-6deg); } }
-
-.welcome[data-mode="clerk"] [data-action="skip"], .welcome[data-mode="clerk"] .demo-only { display: none; }
-.welcome.busy .numpad { opacity: .5; pointer-events: none; }
-.w-step .form-error { margin-bottom: 14px; }
-.resend { align-self: center; margin-top: 14px; }
 .account { margin-top: 12px; display: grid; gap: 8px; }
 .account .button { min-height: 50px; }
 

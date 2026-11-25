@@ -117,7 +117,7 @@ function saveLedger(nextEntries, message) {
 }
 
 let clerk = null;
-let authMode = 'none';
+let authMode = apiMode ? 'pending' : 'offline';
 
 async function authHeaders() {
   if (!clerk?.session) return {};
@@ -128,7 +128,7 @@ async function authHeaders() {
 async function api(path, options = {}) {
   const response = await fetch(`${apiBase}/api${path}`, { ...options, headers: { ...options.headers, ...(await authHeaders()) }, cache: 'no-store' });
   if (response.status === 401 && authMode === 'clerk') {
-    await leaveSession('Your session has ended. Sign in again.');
+    await leaveSession({ expired: true });
     throw new Error('Your session has ended. Sign in again.');
   }
   if (!response.ok) {
@@ -579,61 +579,103 @@ const clickActions = {
 };
 const submitActions = { new: submitNew, payment: submitPayment, sms: submitSms, reminder: submitReminder };
 
-/* Welcome and sign-in. Static preview (file://) runs a demo with no real sign-in; served by the API it uses Clerk email codes. */
+/* The public website and account setup use the same entry point as the ledger. */
 const onboardedKey = 'kwanja-onboarded';
 const welcome = byId('welcome');
+const publicHashes = new Set(['#home', '#welcome', '#how-it-works', '#about', '#questions']);
+const oauthCallback = new URLSearchParams(location.search).has('clerk_oauth');
 let authIntent = 'signup';
-let pending = null;
-let otp = '';
-let verifying = false;
+let challenge = null;
+let pendingEmail = '';
+let configuredProviders = [];
+let resendUntil = 0;
+let resendTimer;
 
 const authMessage = (error) => {
   const first = error?.errors?.[0];
   if (first?.code === 'form_identifier_not_found') return 'No account uses that email. Create one instead.';
   if (first?.code === 'form_identifier_exists') return 'That email already has an account. Log in instead.';
-  if (first?.code === 'form_code_incorrect' || first?.code === 'verification_failed') return 'That code is not right. Check the email and try again.';
+  if (['form_code_incorrect', 'verification_failed'].includes(first?.code)) return 'That code is incorrect. Try again.';
   if (first?.code === 'verification_expired') return 'That code has expired. Request a new one.';
   return first?.longMessage || error?.message || 'Something went wrong. Try again.';
 };
 
-function showStep(step) {
+function showStep(step, focus = true) {
   welcome.querySelectorAll('[data-step]').forEach((section) => { section.hidden = section.dataset.step !== step; });
-  const target = welcome.querySelector(`[data-step="${step}"] input:not([type=hidden]), [data-step="${step}"] h1`);
-  if (target) { target.setAttribute('tabindex', target.tagName === 'H1' ? '-1' : '0'); target.focus({ preventScroll: true }); }
+  byId('auth-layout').hidden = step === 'intro';
+  if (step !== 'intro' && focus) {
+    window.scrollTo(0, 0);
+    welcome.querySelector(`[data-step="${step}"] h1`)?.focus({ preventScroll: true });
+  }
 }
 
-function openWelcome(step = 'intro') {
-  welcome.dataset.mode = authMode === 'clerk' ? 'clerk' : 'demo';
+function openWelcome(step = 'intro', focus = true) {
+  welcome.dataset.mode = authMode;
   welcome.hidden = false;
   document.body.classList.add('is-welcome');
-  otp = '';
-  renderOtp();
-  showStep(step);
+  welcome.querySelector('[data-action="skip"]').hidden = !['offline', 'demo'].includes(authMode);
+  showStep(step, focus);
 }
 
 function hideWelcome() {
   welcome.hidden = true;
   document.body.classList.remove('is-welcome');
-  if (location.hash === '#welcome') location.hash = '#overview';
+  if (!location.hash || publicHashes.has(location.hash) || ['#login', '#signup'].includes(location.hash)) {
+    history.replaceState(null, '', '#overview');
+  }
 }
 
-function finishWelcome(message) {
+async function finishDemo() {
+  if (authMode === 'demo') {
+    hideWelcome();
+    await loadApiLedger();
+    return;
+  }
   try { localStorage.setItem(onboardedKey, '1'); } catch { /* storage unavailable */ }
   hideWelcome();
   render();
-  if (message) notify(message);
-}
-
-function renderOtp() {
-  const slots = byId('otp-slots');
-  slots.innerHTML = Array.from({ length: 6 }, (_, i) => `<span class="${i < otp.length ? 'filled' : ''}${i === otp.length ? ' current' : ''}">${i < otp.length ? '•' : ''}</span>`).join('');
-  slots.setAttribute('aria-label', `${otp.length} of 6 digits entered`);
 }
 
 function stepError(step, message) {
   const error = welcome.querySelector(`[data-step="${step}"] .form-error`);
   error.textContent = message;
   error.hidden = !message;
+}
+
+function updateEmailScreen() {
+  const login = authIntent === 'login';
+  byId('auth-heading').textContent = login ? 'Log in to Kwanja' : 'Create your account';
+  byId('auth-description').textContent = login ? 'Use your account email to get a fresh sign-in code.' : 'We’ll send a six-digit code to verify your email.';
+  byId('auth-switch-copy').textContent = login ? 'New to Kwanja?' : 'Already have an account?';
+  const link = byId('auth-switch-link');
+  link.href = login ? '#signup' : '#login';
+  link.textContent = login ? 'Create account' : 'Log in';
+  const form = welcome.querySelector('[data-form="email"]');
+  form.querySelector('[type="submit"]').disabled = ['pending', 'unavailable'].includes(authMode);
+  const providers = byId('auth-providers');
+  providers.hidden = authMode !== 'clerk' || !configuredProviders.length;
+  providers.querySelectorAll('[data-provider]').forEach((button) => { button.hidden = !configuredProviders.includes(button.dataset.provider); });
+  stepError('email', authMode === 'unavailable' ? 'Sign-in could not load. Try refreshing this page.' : '');
+}
+
+function publicRoute(focus = true) {
+  const hash = location.hash;
+  if (hash === '#signup' || hash === '#login') {
+    if (authMode === 'clerk' && clerk?.session) return afterSignIn();
+    authIntent = hash === '#login' ? 'login' : 'signup';
+    challenge = null;
+    updateEmailScreen();
+    return openWelcome('email', focus);
+  }
+  const wasAwayFromPublicPage = welcome.hidden || !byId('auth-layout').hidden;
+  openWelcome('intro', false);
+  if (wasAwayFromPublicPage && focus && publicHashes.has(hash)) {
+    requestAnimationFrame(() => {
+      const section = byId(hash.slice(1));
+      section?.scrollIntoView();
+      if (hash === '#home') byId('public-title').focus({ preventScroll: true });
+    });
+  }
 }
 
 function clerkDomain(key) {
@@ -649,12 +691,11 @@ async function startClerk(key) {
     if (!domain) throw new Error('Sign-in is not configured correctly.');
     await new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.async = true;
-      script.crossOrigin = 'anonymous';
-      script.dataset.clerkPublishableKey = key;
       script.src = `https://${domain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`;
+      script.dataset.clerkPublishableKey = key;
+      script.crossOrigin = 'anonymous';
       script.onload = resolve;
-      script.onerror = () => reject(new Error('Could not load sign-in. Check your connection and refresh.'));
+      script.onerror = () => reject(new Error('Could not load sign-in. Try again.'));
       document.head.append(script);
     });
   }
@@ -662,26 +703,63 @@ async function startClerk(key) {
   await clerk.load();
 }
 
-async function bootApi() {
-  const status = byId('connection-status');
-  let config;
+function oauthUrl() {
+  return new URL(location.pathname, location.origin);
+}
+
+async function completeOAuth() {
+  openWelcome('callback', false);
+  const destination = oauthUrl();
+  destination.hash = '#overview';
   try {
-    config = await (await api('/config')).json();
-  } catch {
-    return loadApiLedger();
-  }
-  if (config.auth !== 'clerk') return loadApiLedger();
-  authMode = 'clerk';
-  status.hidden = false;
-  status.textContent = 'Loading…';
-  try {
-    await startClerk(config.clerk_publishable_key);
+    await clerk.handleRedirectCallback({
+      signInFallbackRedirectUrl: destination.href,
+      signUpFallbackRedirectUrl: destination.href,
+    });
   } catch (error) {
-    status.innerHTML = `${escape(error.message)} <button class="button" type="button" data-action="reload">Try again</button>`;
-    return undefined;
+    stepError('callback', authMessage(error));
   }
-  status.hidden = true;
-  return clerk.user ? afterSignIn() : openWelcome('intro');
+}
+
+async function startOAuth(button) {
+  const provider = button.dataset.provider;
+  if (authMode !== 'clerk' || !configuredProviders.includes(provider)) return;
+  const callback = oauthUrl();
+  callback.searchParams.set('clerk_oauth', '1');
+  const destination = oauthUrl();
+  destination.hash = '#overview';
+  const flow = authIntent === 'login' ? clerk.client.signIn : clerk.client.signUp;
+  button.disabled = true;
+  stepError('email', '');
+  try {
+    await flow.authenticateWithRedirect({
+      strategy: `oauth_${provider}`, redirectUrl: callback.href, redirectUrlComplete: destination.href,
+    });
+  } catch (error) {
+    stepError('email', authMessage(error));
+    button.disabled = false;
+  }
+}
+
+async function bootApi() {
+  try {
+    const config = await (await api('/config')).json();
+    if (config.auth === 'demo') {
+      authMode = 'demo';
+      if (/^#(overview|ledger|contacts)(\/|$)/.test(location.hash)) return finishDemo();
+      return publicRoute(false);
+    }
+    if (config.auth !== 'clerk') throw new Error('Sign-in is not configured.');
+    await startClerk(config.clerk_publishable_key);
+    authMode = 'clerk';
+    configuredProviders = Array.isArray(config.social_providers) ? config.social_providers : [];
+  } catch {
+    authMode = 'unavailable';
+    return publicRoute(false);
+  }
+  if (oauthCallback) return completeOAuth();
+  if (clerk.user && !publicHashes.has(location.hash)) return afterSignIn();
+  return publicRoute(false);
 }
 
 async function afterSignIn() {
@@ -699,120 +777,146 @@ async function afterSignIn() {
   }
 }
 
-async function leaveSession(message) {
-  try { await clerk?.signOut(); } catch { /* already signed out */ }
+async function leaveSession({ expired = false } = {}) {
+  try {
+    await clerk?.signOut();
+  } catch {
+    if (!expired) {
+      notify('Could not sign out. Check your connection and try again.');
+      return;
+    }
+  }
   entries = [];
   apiReady = false;
+  history.replaceState(null, '', '#home');
   render();
   openWelcome('intro');
-  if (message) notify(message);
+  if (expired) notify('Your session has ended. Log in again.');
 }
 
-async function sendCode(email) {
-  if (authIntent === 'login') {
-    pending = await clerk.client.signIn.create({ identifier: email });
-    const factor = pending.supportedFirstFactors?.find((item) => item.strategy === 'email_code');
-    if (!factor) throw new Error('This account cannot sign in with an email code.');
-    await pending.prepareFirstFactorVerification({ strategy: 'email_code', emailAddressId: factor.emailAddressId });
+async function sendCode({ resource, emailAddressId }) {
+  if (emailAddressId) {
+    await resource.prepareFirstFactorVerification({ strategy: 'email_code', emailAddressId });
   } else {
-    pending = await clerk.client.signUp.create({ emailAddress: email });
-    await pending.prepareEmailAddressVerification({ strategy: 'email_code' });
+    await resource.prepareEmailAddressVerification({ strategy: 'email_code' });
   }
 }
 
-async function verifyCode() {
-  verifying = true;
-  welcome.classList.add('busy');
+async function beginEmail(email, intent) {
+  let nextChallenge;
+  if (intent === 'login') {
+    const resource = await clerk.client.signIn.create({ identifier: email });
+    const factor = resource.supportedFirstFactors?.find((item) => item.strategy === 'email_code');
+    if (!factor?.emailAddressId) throw new Error('This account cannot log in with an email code.');
+    nextChallenge = { resource, emailAddressId: factor.emailAddressId };
+  } else {
+    nextChallenge = { resource: await clerk.client.signUp.create({ emailAddress: email }) };
+  }
+  await sendCode(nextChallenge);
+  return nextChallenge;
+}
+
+function renderResend() {
+  clearTimeout(resendTimer);
+  const button = welcome.querySelector('[data-action="resend"]');
+  const seconds = Math.max(0, Math.ceil((resendUntil - Date.now()) / 1000));
+  button.disabled = seconds > 0;
+  button.textContent = seconds ? `Resend in ${seconds}s` : 'Resend code';
+  if (seconds) resendTimer = setTimeout(renderResend, 1000);
+}
+
+function markCodeSent() {
+  resendUntil = authMode === 'clerk' ? Date.now() + 30000 : 0;
+  renderResend();
+}
+
+async function resendCode(button) {
+  if (authMode !== 'clerk') { notify('Demo mode. No email is sent.'); return; }
+  if (Date.now() < resendUntil) return;
+  button.disabled = true;
   stepError('code', '');
   try {
-    const result = authIntent === 'login'
-      ? await pending.attemptFirstFactorVerification({ strategy: 'email_code', code: otp })
-      : await pending.attemptEmailAddressVerification({ code: otp });
-    if (result.status !== 'complete') {
-      // Clerk may ask a suspicious-looking sign-up to pass a challenge that a custom form cannot show. Its hosted page runs the challenge itself.
-      if (result.missingFields?.includes('protect_check') && clerk.redirectToSignUp) {
-        notify('One more security check. Taking you to Clerk to finish.');
-        await clerk.redirectToSignUp({ signUpFallbackRedirectUrl: location.href, signInFallbackRedirectUrl: location.href });
-        return;
-      }
-      throw new Error('Could not finish signing in. Try again.');
-    }
-    await clerk.setActive({ session: result.createdSessionId });
-    await afterSignIn();
+    await sendCode(challenge);
+    markCodeSent();
+    notify('New code requested.');
   } catch (error) {
-    otp = '';
-    renderOtp();
+    button.disabled = false;
     stepError('code', authMessage(error));
-  } finally {
-    verifying = false;
-    welcome.classList.remove('busy');
   }
+}
+
+async function verifyCode(code) {
+  const { resource, emailAddressId } = challenge;
+  const result = emailAddressId
+    ? await resource.attemptFirstFactorVerification({ strategy: 'email_code', code })
+    : await resource.attemptEmailAddressVerification({ code });
+  if (result.status !== 'complete') {
+    if (result.missingFields?.includes('protect_check') && clerk.redirectToSignUp) {
+      const destination = oauthUrl();
+      destination.hash = '#overview';
+      await clerk.redirectToSignUp({ signUpFallbackRedirectUrl: destination.href, signInFallbackRedirectUrl: destination.href });
+      return;
+    }
+    throw new Error('Could not finish logging in. Try again.');
+  }
+  await clerk.setActive({ session: result.createdSessionId });
+  await afterSignIn();
 }
 
 Object.assign(clickActions, {
-  start: () => { authIntent = 'signup'; showStep('email'); },
-  login: () => { authIntent = 'login'; showStep('email'); },
-  skip: () => finishWelcome('Demo workspace opened.'),
-  reload: () => location.reload(),
+  skip: finishDemo,
   'retry-auth': afterSignIn,
   signout: () => leaveSession(),
-  'welcome-back': (button) => showStep(button.dataset.to),
-  resend: async () => {
-    if (authMode !== 'clerk') { notify('Demo only: no email is sent.'); return; }
-    try { await sendCode(byId('otp-email').textContent); notify('New code sent.'); } catch (error) { stepError('code', authMessage(error)); }
+  provider: startOAuth,
+  'change-email': () => {
+    challenge = null;
+    welcome.querySelector('[data-form="email"] [name="email"]').value = pendingEmail;
+    updateEmailScreen();
+    showStep('email');
   },
-  otp: (button) => {
-    if (verifying) return;
-    stepError('code', '');
-    otp = button.dataset.key === 'del' ? otp.slice(0, -1) : (otp + button.dataset.key).slice(0, 6);
-    renderOtp();
-    if (otp.length !== 6) return;
-    if (authMode === 'clerk') verifyCode();
-    else setTimeout(() => finishWelcome('Welcome to Kwanja. This is a demo, so no code was checked.'), 250);
-  },
+  resend: resendCode,
 });
 
 welcome.addEventListener('submit', async (event) => {
   event.preventDefault();
   const form = event.target;
-  const step = form.closest('[data-step]').dataset.step;
+  const step = form.dataset.form;
   const values = Object.fromEntries(new FormData(form));
   const submit = form.querySelector('[type=submit]');
+  if (submit.disabled) return;
+  submit.disabled = true;
   stepError(step, '');
-  if (step === 'email') {
-    const email = values.email.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { stepError(step, 'Enter a valid email address.'); return; }
-    byId('otp-email').textContent = email;
-    otp = '';
-    renderOtp();
-    if (authMode === 'clerk') {
-      submit.disabled = true;
-      try { await sendCode(email); } catch (error) { stepError(step, authMessage(error)); return; } finally { submit.disabled = false; }
-    }
-    showStep('code');
-  } else {
-    const name = values.business.trim();
-    if (!name) { stepError(step, 'Enter your business name.'); return; }
-    submit.disabled = true;
-    try {
-      await (await api('/business', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })).json();
+  try {
+    if (step === 'email') {
+      const email = values.email.trim();
+      const screen = location.hash;
+      const requestedCode = authMode === 'clerk' ? await beginEmail(email, authIntent) : null;
+      if (screen !== location.hash || form.closest('[data-step]').hidden) return;
+      challenge = requestedCode;
+      pendingEmail = email;
+      byId('otp-email').textContent = email;
+      welcome.querySelector('[name="code"]').value = '';
+      stepError('code', '');
+      markCodeSent();
+      showStep('code');
+    } else if (step === 'code') {
+      if (authMode === 'clerk') await verifyCode(values.code);
+      else await finishDemo();
+    } else {
+      const name = values.business.trim();
+      if (!name) throw new Error('Enter your business name.');
+      await api('/business', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
       hideWelcome();
       await loadApiLedger();
       notify('Your ledger is ready.');
-    } catch (error) {
-      stepError(step, error.message);
-    } finally {
-      submit.disabled = false;
     }
+  } catch (error) {
+    stepError(step, authMessage(error));
+    if (step === 'code') welcome.querySelector('[name="code"]').select();
+  } finally {
+    submit.disabled = false;
   }
 });
-
-window.addEventListener('hashchange', () => { if (!apiMode && location.hash === '#welcome') openWelcome(); });
-if (!apiMode) {
-  try {
-    if (location.hash === '#welcome' || !localStorage.getItem(onboardedKey)) openWelcome();
-  } catch { openWelcome(); }
-}
 
 document.addEventListener('click', (event) => {
   const button = event.target.closest('[data-action]');
@@ -849,11 +953,20 @@ try {
 
 document.querySelector('.skip-link').addEventListener('click', (event) => {
   event.preventDefault();
-  byId('main').focus();
-  byId('main').scrollIntoView();
+  const target = welcome.hidden ? byId('main') : byId('public-main');
+  if (!target.closest('[hidden]')) {
+    target.focus();
+    target.scrollIntoView();
+  } else {
+    welcome.querySelector('[data-step]:not([hidden]) h1')?.focus();
+  }
 });
 byId('search').addEventListener('input', renderLedger);
 window.addEventListener('hashchange', () => {
+  if (publicHashes.has(location.hash) || ['#signup', '#login'].includes(location.hash) || !welcome.hidden) {
+    publicRoute();
+    return;
+  }
   render();
   window.scrollTo(0, 0);
 });
@@ -865,4 +978,9 @@ window.addEventListener('storage', (event) => {
 });
 
 render();
-if (apiMode) bootApi();
+publicRoute(false);
+if (apiMode) {
+  bootApi();
+} else if (/^#(overview|ledger|contacts)(\/|$)/.test(location.hash)) {
+  try { if (localStorage.getItem(onboardedKey)) finishDemo(); } catch { /* storage unavailable */ }
+}

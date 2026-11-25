@@ -13,10 +13,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="stylesheet" href="ledger.css">
+  <link rel="stylesheet" href="public.css">
   <script src="config.js"></script>
   <script src="ledger.js" defer></script>
 </head>
-<body>
+<body class="is-welcome">
   <svg xmlns="http://www.w3.org/2000/svg" class="icon-library" aria-hidden="true">
     <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-5.5H9v5.5H5.5A1.5 1.5 0 0 1 4 19z"/></symbol>
     <symbol id="i-ledger" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M9 8h6m-6 4h6m-6 4h3"/></symbol>
@@ -98,54 +99,114 @@
     </nav>
   </div>
 
-  <section id="welcome" class="welcome" aria-label="Welcome to Kwanja" hidden>
-    <div class="w-step" data-step="intro">
-      <div class="w-art" aria-hidden="true">
-        <div class="w-card c3"><b>Baraka Wholesalers</b><span>KES 18,400</span></div>
-        <div class="w-card c2"><b>Kamau Hardware</b><span>KES 28,400</span></div>
-        <div class="w-card c1"><b>Mama Njeri</b><span>KES 6,200</span><i>Overdue</i></div>
-        <span class="coin"><svg class="icon"><use href="#i-chat"/></svg></span>
-      </div>
-      <h1 tabindex="-1">Get paid what you are owed.</h1>
-      <p class="w-sub">Keep every debt in one place. Remind customers on WhatsApp and record M-Pesa payments in seconds.</p>
-      <div class="w-actions">
-        <button class="button primary" type="button" data-action="start">Create account</button>
-        <p class="w-login">Have an account? <button type="button" class="link" data-action="login">Log in</button></p>
-        <button type="button" class="link subtle" data-action="skip">Explore the demo workspace</button>
-      </div>
+  <section id="welcome" class="welcome" aria-label="Kwanja website">
+    <div data-step="intro" class="public-site" id="home">
+      <header class="public-header">
+        <div class="public-bar">
+          <a class="brand" href="#home" aria-label="Kwanja home"><img src="logo/kwanja-wordmark.svg" alt="Kwanja"></a>
+          <nav class="public-nav" aria-label="About Kwanja"><a href="#how-it-works">How it works</a><a href="#about">About us</a><a href="#questions">FAQ</a></nav>
+          <div class="public-account"><a class="public-login" href="#login">Log in</a><a class="pill primary" href="#signup">Create account</a></div>
+        </div>
+      </header>
+      <main id="public-main" tabindex="-1">
+        <section class="public-width public-hero" aria-labelledby="public-title">
+          <div class="hero-copy">
+            <p class="eyebrow"><span class="lime-dot"></span>A debt ledger for Kenyan businesses</p>
+            <h1 id="public-title" tabindex="-1">Know who owes you. <mark>Get paid.</mark></h1>
+            <p class="lede">Keep customer credit, supplier debts and partial payments in one place. When it is time to follow up, send a WhatsApp reminder with the right balance.</p>
+            <div class="hero-actions"><a class="pill primary large" href="#signup">Create account</a><a class="pill light large" href="#how-it-works">See how it works</a></div>
+            <button class="public-demo link" type="button" data-action="skip" hidden>Explore the demo ledger</button>
+          </div>
+          <figure class="sample" aria-label="Example ledger showing what customers still owe">
+            <span class="coin" aria-hidden="true"><svg class="icon"><use href="#i-chat"/></svg></span>
+            <div class="sample-top"><span><svg class="icon" aria-hidden="true"><use href="#i-ledger"/></svg>Wanjiru Traders</span><span class="chip">Sample ledger</span></div>
+            <div class="sample-balance"><span>Owed to you</span><strong><small>KES</small> 31,600</strong></div>
+            <div class="sample-row"><span class="contact-avatar avatar-0" aria-hidden="true">MN</span><div><b>Mama Njeri</b><small>Groceries · partial payment</small></div><div><b class="plus">+KES 6,200</b><small class="late">Overdue</small></div></div>
+            <div class="sample-row"><span class="contact-avatar avatar-3" aria-hidden="true">KH</span><div><b>Kamau Hardware</b><small>Building supplies</small></div><div><b class="plus">+KES 25,400</b><small>Due 2 Dec</small></div></div>
+            <figcaption><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg>Review a reminder before sending it on WhatsApp</figcaption>
+          </figure>
+        </section>
+        <section class="public-width public-section" id="how-it-works" aria-labelledby="how-heading">
+          <h2 id="how-heading">From selling on credit to settling up.</h2>
+          <div class="public-steps">
+            <article><span class="step-badge"><svg class="icon" aria-hidden="true"><use href="#i-ledger"/></svg></span><h3>Record the debt</h3><p>Add a customer or supplier, the amount in KES, and a due date if you have agreed on one.</p></article>
+            <article><span class="step-badge"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg></span><h3>Follow up clearly</h3><p>Open an editable WhatsApp draft with the outstanding amount. Review the message and send it when you are ready.</p></article>
+            <article><span class="step-badge"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><h3>Record the payment</h3><p>Enter a payment yourself or paste a supported M-Pesa SMS and review the details. Partial payments reduce the balance as you record them.</p></article>
+          </div>
+        </section>
+        <section class="public-width" id="about" aria-labelledby="about-heading">
+          <div class="public-dark about-panel">
+            <p class="eyebrow on-dark"><span class="lime-dot"></span>About Kwanja</p>
+            <h2 id="about-heading">Credit is part of everyday business.</h2>
+            <div class="about-copy"><p>A neighbour takes groceries today and pays on Friday. A supplier delivers stock and gives you a week to settle. When those promises are spread across notebooks, messages and memory, it is easy to lose track of the balance.</p>
+            <p>Kwanja is built for shopkeepers, wholesalers, salons and other small businesses in Kenya. It brings customer and supplier balances together, works in Kenyan shillings, and fits the way merchants already use WhatsApp and M-Pesa.</p></div>
+          </div>
+        </section>
+        <section class="public-width public-section" id="questions" aria-labelledby="faq-heading">
+          <h2 id="faq-heading">Common questions</h2>
+          <div class="public-faq">
+            <details><summary>Does Kwanja collect or hold money?</summary><p>Payments happen through your usual channels. Kwanja records the amounts and helps you prepare reminders.</p></details>
+            <details><summary>Can I track supplier debts too?</summary><p>Yes. The ledger keeps money owed to you separate from money you owe. Both support partial payments.</p></details>
+            <details><summary>Do I need to connect my M-Pesa account?</summary><p>No. You can enter payments yourself or paste a supported confirmation SMS. You review what Kwanja extracts before a payment is recorded.</p></details>
+            <details><summary>Can I download my records?</summary><p>Yes. Export the ledger to CSV for your records or to open in a spreadsheet.</p></details>
+          </div>
+        </section>
+        <section class="public-width public-cta" aria-labelledby="cta-heading"><h2 id="cta-heading">Start with your first debt.</h2><a class="pill primary large" href="#signup">Create account</a></section>
+      </main>
+      <footer class="public-footer"><div class="public-width"><a class="brand" href="#home" aria-label="Kwanja home"><img src="logo/kwanja-wordmark.svg" alt="Kwanja"></a><a href="#about">About us</a><a href="#questions">FAQ</a><a href="#login">Log in</a></div></footer>
     </div>
-    <div class="w-step" data-step="email" hidden>
-      <button class="round" type="button" data-action="welcome-back" data-to="intro" aria-label="Back"><svg class="icon" style="transform:rotate(180deg)"><use href="#i-chevron"/></svg></button>
-      <h1 tabindex="-1">What is your email?</h1>
-      <p class="w-sub">We will send you a 6-digit code. No password to remember.</p>
-      <form class="form" novalidate>
-        <label class="field"><span>Email</span><input name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@business.co.ke" required></label>
-        <p class="form-error" role="alert" hidden></p>
-        <button class="button primary" type="submit">Send code</button>
-      </form>
-    </div>
-    <div class="w-step" data-step="code" hidden>
-      <button class="round" type="button" data-action="welcome-back" data-to="email" aria-label="Back"><svg class="icon" style="transform:rotate(180deg)"><use href="#i-chevron"/></svg></button>
-      <h1 tabindex="-1">Enter your code</h1>
-      <p class="w-sub">Sent to <b id="otp-email"></b>. <span class="demo-only">This is a demo, so any 6 digits work.</span></p>
-      <div id="otp-slots" class="otp" role="img"></div>
-      <p class="form-error" role="alert" hidden></p>
-      <div class="numpad">
-        <button type="button" data-action="otp" data-key="1">1</button><button type="button" data-action="otp" data-key="2">2</button><button type="button" data-action="otp" data-key="3">3</button>
-        <button type="button" data-action="otp" data-key="4">4</button><button type="button" data-action="otp" data-key="5">5</button><button type="button" data-action="otp" data-key="6">6</button>
-        <button type="button" data-action="otp" data-key="7">7</button><button type="button" data-action="otp" data-key="8">8</button><button type="button" data-action="otp" data-key="9">9</button>
-        <span></span><button type="button" data-action="otp" data-key="0">0</button><button type="button" data-action="otp" data-key="del" aria-label="Delete last digit"><svg class="icon"><use href="#i-back"/></svg></button>
+
+    <div class="auth-layout" id="auth-layout" hidden>
+      <aside class="auth-side">
+        <a class="brand" href="#home" aria-label="Kwanja home"><img src="logo/kwanja-wordmark.svg" alt="Kwanja"></a>
+        <div class="auth-art" aria-hidden="true">
+          <div class="w-card c3"><b>Baraka Wholesalers</b><span>KES 18,400</span></div>
+          <div class="w-card c2"><b>Kamau Hardware</b><span>KES 28,400</span></div>
+          <div class="w-card c1"><b>Mama Njeri</b><span>KES 6,200</span><i>Overdue</i></div>
+        </div>
+        <div class="auth-pitch"><strong>Your business ledger</strong><p>Track customer credit, supplier debts and partial payments.</p></div>
+      </aside>
+      <div class="auth-content">
+        <a class="auth-back" href="#home"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg>Back to Kwanja</a>
+        <div class="auth-card">
+          <div class="w-step" data-step="email" hidden>
+            <h1 tabindex="-1" id="auth-heading">Create your account</h1>
+            <p class="w-sub" id="auth-description">We will send a six-digit code to verify your email.</p>
+            <div class="auth-providers" id="auth-providers" hidden>
+              <button class="auth-provider" type="button" data-action="provider" data-provider="google" hidden>Continue with Google</button>
+              <button class="auth-provider" type="button" data-action="provider" data-provider="apple" hidden>Continue with Apple</button>
+              <p class="auth-or"><span>or use your email</span></p>
+            </div>
+            <form class="auth-form" data-form="email">
+              <label class="field"><span>Email address</span><input name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@business.co.ke" required></label>
+              <p class="form-error" role="alert" hidden></p>
+              <button class="pill primary large block" type="submit">Send code</button>
+            </form>
+            <p class="auth-switch"><span id="auth-switch-copy">Already have an account?</span> <a class="link" id="auth-switch-link" href="#login">Log in</a></p>
+            <p class="demo-only auth-demo-note">Demo mode. No email is sent and any six digits work.</p>
+          </div>
+          <div class="w-step" data-step="code" hidden>
+            <h1 tabindex="-1">Check your email</h1>
+            <p class="w-sub">Enter the six-digit code sent to <b id="otp-email"></b>. <span class="demo-only">For the demo, enter any six digits.</span></p>
+            <form class="auth-form" data-form="code">
+              <label class="field"><span>Verification code</span><input class="code-input" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000" required></label>
+              <p class="form-error" role="alert" hidden></p>
+              <button class="pill primary large block" type="submit">Verify code</button>
+            </form>
+            <div class="auth-code-actions"><button class="link" type="button" data-action="change-email">Change email</button><button class="link" type="button" data-action="resend">Resend code</button></div>
+          </div>
+          <div class="w-step" data-step="business" hidden>
+            <h1 tabindex="-1">Set up your ledger</h1>
+            <p class="w-sub">Your business name appears in your ledger and in the reminders you prepare for customers.</p>
+            <form class="auth-form" data-form="business">
+              <label class="field"><span>Business name</span><input name="business" maxlength="100" autocomplete="organization" placeholder="e.g. Wanjiru Traders" required></label>
+              <p class="form-error" role="alert" hidden></p>
+              <button class="pill primary large block" type="submit">Create my ledger</button>
+            </form>
+          </div>
+          <div class="w-step" data-step="callback" hidden><h1 tabindex="-1">Finishing sign-in</h1><p class="w-sub">One moment while we finish signing you in.</p><p class="form-error" role="alert" hidden></p></div>
+        </div>
       </div>
-      <button type="button" class="link subtle resend" data-action="resend">Did not get it? Send a new code</button>
-    </div>
-    <div class="w-step" data-step="business" hidden>
-      <h1 tabindex="-1">Name your business.</h1>
-      <p class="w-sub">This is how your ledger and customer reminders will read. You can change it later.</p>
-      <form class="form" novalidate>
-        <label class="field"><span>Business name</span><input name="business" maxlength="100" autocomplete="organization" placeholder="e.g. Wanjiru Traders" required></label>
-        <p class="form-error" role="alert" hidden></p>
-        <button class="button primary" type="submit">Create my ledger</button>
-      </form>
     </div>
   </section>
 
