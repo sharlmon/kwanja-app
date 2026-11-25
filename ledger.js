@@ -298,14 +298,25 @@ function route() {
   return { page: Object.hasOwn(pageTitles, page) ? page : 'overview', filter: selectedFilter };
 }
 
+const searchText = (value) => value.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
+const searchReference = (value) => searchText(value).replace(/[\s./_-]+/g, '');
+
 function renderLedger() {
   const { filter } = route();
-  const query = byId('search').value.trim().toLocaleLowerCase();
+  const query = searchText(byId('search').value);
+  const reference = searchReference(query);
+  const phoneDigits = /^[+\d\s().-]+$/.test(query) ? query.replace(/\D/g, '') : '';
   const base = filter === 'followup'
     ? followUpQueue(entries.filter((entry) => entry.direction === 'receivable' && outstanding(entry) > 0), localDate()) : sortedEntries();
   const rows = base.filter((entry) => {
     const matchesFilter = filter === 'all' || filter === 'followup' || (filter === 'paid' ? !outstanding(entry) : filter === entry.direction && outstanding(entry) > 0);
-    return matchesFilter && `${entry.contact} ${entryDescription(entry)}`.toLocaleLowerCase().includes(query);
+    if (!matchesFilter) return false;
+    if (!query || searchText(`${entry.contact} ${entryDescription(entry)}`).includes(query)) return true;
+    if (reference && entry.job_reference && searchReference(entry.job_reference).includes(reference)) return true;
+    if (!phoneDigits || !entry.phone) return false;
+    const mobile = kenyanMobile(entry.phone);
+    const storedDigits = (mobile || entry.phone).replace(/\D/g, '');
+    return storedDigits.includes(phoneDigits) || Boolean(mobile && `0${storedDigits.slice(3)}`.includes(phoneDigits));
   });
 
   document.querySelectorAll('[data-filter]').forEach((link) => {
@@ -315,8 +326,15 @@ function renderLedger() {
 
   const owedTo = rows.filter((entry) => entry.direction === 'receivable').reduce((sum, entry) => sum + outstanding(entry), 0);
   const owe = rows.filter((entry) => entry.direction === 'payable').reduce((sum, entry) => sum + outstanding(entry), 0);
-  byId('ledger-sub').textContent = [plural(rows.length, 'entry', 'entries'), owedTo ? `${money(owedTo)} owed to you` : '', owe ? `${money(owe)} you owe` : ''].filter(Boolean).join(' · ');
-  byId('ledger-list').innerHTML = rows.map(entryCard).join('') || (entries.length ? empty(query ? 'No entries match your search.' : 'No entries in this view.') : emptyLedger());
+  byId('ledger-sub').textContent = [query ? plural(rows.length, 'match', 'matches') : plural(rows.length, 'entry', 'entries'), owedTo ? `${money(owedTo)} owed to you` : '', owe ? `${money(owe)} you owe` : ''].filter(Boolean).join(' · ');
+  const list = byId('ledger-list');
+  if (rows.length && query) {
+    list.innerHTML = `<div class="search-results">${rows.map((entry) => entryRow(entry)).join('')}</div>`;
+  } else {
+    list.innerHTML = rows.map(entryCard).join('') || (entries.length
+      ? empty(query ? (filter === 'all' ? 'No entries match your search.' : 'No matches in this filter. Choose All to search the full ledger.') : 'No entries in this view.')
+      : emptyLedger());
+  }
 }
 
 function renderContacts() {
@@ -482,28 +500,31 @@ function selectCalendarDate(picker, value) {
   picker.querySelector('summary').focus();
 }
 
-function showNew() {
+function showNew(previous = null) {
   const names = [...new Set(entries.map((entry) => entry.contact))];
+  const payable = previous?.direction === 'payable';
   showDialog('Add debt', `<form class="form" data-form="new">
     <div class="segment" role="radiogroup" aria-label="Direction">
-      <label><input type="radio" name="direction" value="receivable" checked><span>Owed to you</span></label>
-      <label><input type="radio" name="direction" value="payable"><span>You owe</span></label>
+      <label><input type="radio" name="direction" value="receivable"${payable ? '' : ' checked'}><span>Owed to you</span></label>
+      <label><input type="radio" name="direction" value="payable"${payable ? ' checked' : ''}><span>You owe</span></label>
     </div>
-    ${field('Contact', '<input name="contact" maxlength="80" list="contact-names" placeholder="Customer or supplier name" required>')}
+    ${field('Contact', previous
+      ? `<input name="contact" value="${escape(previous.contact)}" readonly>`
+      : '<input name="contact" maxlength="80" list="contact-names" placeholder="Customer or supplier name" required>')}
     <datalist id="contact-names">${names.map((name) => `<option value="${escape(name)}"></option>`).join('')}</datalist>
     ${field('Total amount (KES)', '<input class="big" name="amount" type="number" inputmode="decimal" min="0.01" max="1000000000" step="0.01" placeholder="0" required>')}
     ${workshopLedger ? `<div class="field-grid">
       ${field('Job or sale type', `<select name="kind"><option value="">Choose a type</option>${Object.entries(entryKinds).map(([key, label]) => `<option value="${key}">${label}</option>`).join('')}</select>`)}
       ${field('Reference (optional)', '<input name="job_reference" maxlength="40" placeholder="e.g. WS-014">')}
     </div>
-    ${field('Customer deposit already paid (optional)', '<input name="deposit" type="number" min="0" max="1000000000" step="0.01" inputmode="decimal" placeholder="KES">')}
+    <label class="field"${payable ? ' hidden' : ''}><span>Customer deposit already paid (optional)</span><input name="deposit" type="number" min="0" max="1000000000" step="0.01" inputmode="decimal" placeholder="KES"${payable ? ' disabled' : ''}></label>
     ${dateField('Pickup date (optional)', 'pickup_on')}
-    ${field('Contact’s mobile number (optional)', '<input name="phone" type="tel" inputmode="tel" maxlength="24" placeholder="07XX XXX XXX">')}` : ''}
+    ${field('Contact’s mobile number (optional)', `<input name="phone" type="tel" inputmode="tel" maxlength="24" placeholder="07XX XXX XXX" value="${escape(previous?.phone || '')}">`)}` : ''}
     ${dateField('Payment due date (optional)', 'due')}
     ${field('Note (optional)', '<input name="note" maxlength="120" placeholder="e.g. Screen replacement">')}
     <p class="form-error" role="alert" hidden></p>
     <div class="form-actions"><button class="button primary" type="submit">Save debt</button></div>
-  </form>`, '[name=contact]');
+  </form>`, previous ? '[name=amount]' : '[name=contact]');
 }
 
 function showDetail(entry) {
@@ -517,17 +538,22 @@ function showDetail(entry) {
   const history = [...entry.payments].reverse().map((payment) => `<li>
     <span>${displayDate(payment.date)}${payment.is_deposit ? ' · Deposit' : ''}${payment.reference ? ` · ${escape(payment.reference)}` : ''}</span><strong>${money(payment.cents)}</strong>
   </li>`).join('');
+  const deposit = entry.payments.find((payment) => payment.is_deposit);
   const details = [
+    entry.phone && ['Mobile number', entry.phone],
     entry.pickup_on && ['Pickup', displayDate(entry.pickup_on)],
     entry.promised_on && ['Promised payment', displayDate(entry.promised_on)],
     entry.last_follow_up && ['Last contacted', displayDate(entry.last_follow_up)],
   ].filter(Boolean);
   showDialog(entry.contact, `<div class="detail-summary ${balance ? entry.direction : 'settled'}"><p>${directions[entry.direction]} · ${status.text}</p>
-    <strong class="detail-amount">${money(balance)}</strong><p>Original amount ${money(entry.cents)}</p></div>
+    <strong class="detail-amount">${money(balance)}</strong><p>Original amount ${money(entry.cents)}${deposit ? ` · Deposit ${money(deposit.cents)}` : ''}</p></div>
     <p class="detail-meta">Added ${displayDate(entry.date)} · ${escape(entryDescription(entry))}</p>
-    ${details.length ? `<dl class="workshop-meta">${details.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>` : ''}
+    ${details.length ? `<dl class="workshop-meta">${details.map(([label, value]) => `<div><dt>${label}</dt><dd>${escape(value)}</dd></div>`).join('')}</dl>` : ''}
     ${actions}
-    ${workshopLedger ? `<button class="link workshop-details" type="button" data-action="follow-up">${entry.direction === 'receivable' ? 'Follow-up details' : 'Contact number'}</button>` : ''}
+    <div class="detail-tools">
+      ${workshopLedger ? `<button class="link workshop-details" type="button" data-action="follow-up">${entry.direction === 'receivable' ? 'Follow-up details' : 'Contact number'}</button>` : ''}
+      <button class="link workshop-details" type="button" data-action="repeat-entry">New entry for this contact</button>
+    </div>
     <section class="detail-history"><h3>Payment history</h3>${history ? `<ul>${history}</ul>` : '<p class="help">No payments recorded yet.</p>'}</section>`);
 }
 
@@ -872,7 +898,17 @@ async function copyReminder() {
 }
 
 const clickActions = {
-  new: showNew,
+  new: () => showNew(),
+  'find-entry': () => {
+    if (!apiReady) return;
+    const { page, filter } = route();
+    if (page !== 'ledger' || filter !== 'all') {
+      history.pushState(null, '', '#ledger');
+      render();
+    }
+    byId('search').focus();
+  },
+  'repeat-entry': () => showNew(activeEntry),
   retry: loadApiLedger,
   export: exportLedger,
   import: () => showImport(),
@@ -1181,6 +1217,7 @@ async function leaveSession({ expired = false } = {}) {
   }
   entries = [];
   apiReady = false;
+  byId('search').value = '';
   history.replaceState(null, '', '#home');
   render();
   openWelcome('intro');
@@ -1473,7 +1510,7 @@ dialog.addEventListener('close', () => {
   if (dialogContent.querySelector('.walkthrough')) rememberWalkthrough();
   const entryId = returnFocus?.dataset.entry;
   const replacement = entryId && [...byId(`${route().page}-view`).querySelectorAll('[data-entry]')].find((element) => element.dataset.entry === entryId);
-  (returnFocus?.isConnected ? returnFocus : replacement || document.querySelector('.pill-dark')).focus();
+  (returnFocus?.isConnected ? returnFocus : replacement || byId('main')).focus();
 });
 
 function togglePrivacy(button) {
@@ -1499,6 +1536,11 @@ document.querySelector('.skip-link').addEventListener('click', (event) => {
   }
 });
 byId('search').addEventListener('input', renderLedger);
+byId('ledger-search').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const matches = byId('ledger-list').querySelectorAll('.search-results [data-entry]');
+  if (matches.length === 1) matches[0].click();
+});
 window.addEventListener('hashchange', () => {
   if (publicHashes.has(location.hash) || ['#signup', '#login'].includes(location.hash) || !welcome.hidden) {
     publicRoute();

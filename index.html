@@ -12,10 +12,10 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <link rel="stylesheet" href="ledger.css?v=e6bf51d73141">
+  <link rel="stylesheet" href="ledger.css?v=fc0f98fb9250">
   <link rel="stylesheet" href="public.css?v=4dbd3f811d15">
   <script src="config.js?v=e29e0d7d06cd"></script>
-  <script src="ledger.js?v=fa27990c7751" defer></script>
+  <script src="ledger.js?v=82db512e1537" defer></script>
 </head>
 <body class="is-welcome">
   <svg xmlns="http://www.w3.org/2000/svg" class="icon-library" aria-hidden="true">
@@ -45,7 +45,6 @@
         <a class="brand" href="#overview" aria-label="Kwanja overview"><img src="logo/kwanja-lockup.svg" alt="Kwanja"></a>
         <span class="spacer"></span>
         <button class="round privacy" type="button" data-action="privacy" aria-pressed="false" aria-label="Hide amounts"><svg class="icon"><use href="#i-eye"/></svg></button>
-        <button class="pill-dark" type="button" data-action="export"><svg class="icon"><use href="#i-download"/></svg>Export</button>
       </header>
 
       <p id="workspace-offline" class="connection-status offline-status" role="status" hidden>You’re offline. You can view the ledger loaded in this session. Reconnect to save changes or import and export files.</p>
@@ -79,14 +78,20 @@
 
       <section id="ledger-view" aria-label="Ledger entries" hidden>
         <h1 class="view-title">Ledger</h1>
-        <p class="view-sub" id="ledger-sub"></p><button class="mini import-button" type="button" data-action="import" id="import-entry" hidden>Import CSV</button>
-        <label class="search"><svg class="icon"><use href="#i-search"/></svg><input id="search" type="search" placeholder="Search ledger" aria-label="Search ledger"></label>
+        <p class="view-sub" id="ledger-sub" role="status"></p>
+        <form id="ledger-search" role="search">
+          <label class="search"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><input id="search" type="search" placeholder="Name, phone, or reference" aria-label="Search ledger by name, phone, or reference" autocomplete="off"></label>
+        </form>
         <div id="filters" class="filters" aria-label="Filter entries">
           <a href="#ledger" data-filter="all">All</a>
           <a href="#ledger/receivable" data-filter="receivable">Owed to you</a>
           <a href="#ledger/payable" data-filter="payable">You owe</a>
           <a href="#ledger/paid" data-filter="paid">Settled</a>
           <a href="#ledger/followup" data-filter="followup" id="follow-filter" hidden>Follow-up due</a>
+        </div>
+        <div class="ledger-tools" aria-label="Ledger files" role="group">
+          <button class="mini" type="button" data-action="import" id="import-entry" hidden>Import CSV</button>
+          <button class="mini" type="button" data-action="export">Export CSV</button>
         </div>
         <div id="ledger-list" class="cards"></div>
       </section>
@@ -105,7 +110,7 @@
       <a href="#ledger" data-nav="ledger" aria-label="Ledger"><svg class="icon"><use href="#i-ledger"/></svg></a>
       <button class="fab" type="button" data-action="new" aria-label="Add debt"><svg class="icon"><use href="#i-plus"/></svg></button>
       <a href="#contacts" data-nav="contacts" aria-label="Contacts"><svg class="icon"><use href="#i-people"/></svg></a>
-      <button class="dock-export" type="button" data-action="export" aria-label="Export ledger"><svg class="icon"><use href="#i-download"/></svg></button>
+      <button class="dock-search" type="button" data-action="find-entry" aria-label="Find a customer or job"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></button>
     </nav>
   </div>
 
