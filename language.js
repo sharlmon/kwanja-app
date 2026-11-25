@@ -3,6 +3,16 @@
 (() => {
   const swahili = Object.fromEntries(`
 Kwanja | Tech shop and repair ledger => Kwanja | Daftari la madeni kwa maduka ya teknolojia na ukarabati
+Try it => Jaribu
+An example job => Mfano wa kazi
+A phone that stopped charging. => Simu iliyoacha kuchaji.
+A burnt power chip on the board, a deposit at the counter, a balance at pickup. One ticket follows the job from the bench to the till. => Chipu ya umeme iliyoungua kwenye bodi, malipo ya awali kaunta, salio wakati wa kuchukua. Tiketi moja inafuata kazi kuanzia meza ya fundi hadi kwa mhasibu.
+Brought in. Fault found at the bench. KES 1,000 deposit taken. => Imeletwa. Hitilafu imepatikana mezani. Malipo ya awali ya KES 1,000 yamepokelewa.
+Part replaced. The customer gets a WhatsApp message. => Kipuri kimebadilishwa. Mteja anapata ujumbe wa WhatsApp.
+Picked up. KES 2,500 balance paid by M-Pesa. Ticket settled. => Amechukua kifaa. Salio la KES 2,500 limelipwa kwa M-Pesa. Tiketi imekamilika.
+A bench full of screens. Who has paid? => Meza iliyojaa skrini. Nani ameshalipa?
+Every job gets a ticket with its deposit and balance, so the pile on the bench is not also the pile in your head. => Kila kazi ina tiketi yenye malipo ya awali na salio, kwa hivyo rundo mezani si rundo kichwani pia.
+Charred power chip => Chipu ya umeme iliyoungua
 Getting started => Kuanza
 Add a job or sale => Ongeza kazi au mauzo
 Total, deposit already paid and a job number. => Jumla, malipo ya awali na nambari ya kazi.
