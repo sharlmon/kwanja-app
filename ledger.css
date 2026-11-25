@@ -278,3 +278,23 @@ dialog::before { content: ""; display: block; width: 38px; height: 4px; margin: 
 .view-sub { margin-bottom: var(--s-4); color: var(--muted); font-size: var(--fs-small); }
 .search { margin-top: var(--s-1); }
 .hero-amount-note { color: var(--muted); }
+
+.workshop-follow-list { display: grid; gap: 14px; }
+.follow-group h3 { color: var(--ink2); font-size: .9rem; margin-bottom: 6px; }
+.follow-group h3 span { margin-left: 4px; color: var(--muted); }
+.follow-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.follow-record { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; align-items: start; width: 100%; padding: 6px 0; border: 0; background: transparent; text-align: left; }
+.follow-record > strong, .follow-record small { grid-column: 1; overflow-wrap: anywhere; }
+.follow-record small { color: var(--ink2); }
+.follow-record .row-amount { grid-column: 2; grid-row: 1 / span 2; color: var(--plus); font-weight: 700; }
+.follow-item .round { color: var(--plus); }
+.workshop-meta { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0 0 14px; }
+.workshop-meta dt { font-size: .86rem; color: var(--ink2); }
+.workshop-meta dd { margin: 0; font-weight: 700; }
+.workshop-check { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.workshop-check input { width: 18px; height: 18px; }
+.workshop-details { display: inline-block; min-height: 44px; margin-top: 8px; }
+.import-button { margin-bottom: 10px; min-height: 44px; }
+.import-rows { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.import-rows li { display: grid; gap: 3px; padding: 0 0 8px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.import-rows li span { color: var(--ink2); font-size: .9rem; }

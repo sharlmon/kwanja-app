@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0a0f0c">
-  <title>Kwanja | Business ledger</title>
-  <meta name="description" content="Track what customers owe you and what you owe suppliers.">
+  <title>Kwanja | Tech shop and repair ledger</title>
+  <meta name="description" content="Track repair deposits, device sales on credit, and unpaid balances for tech shops in Nairobi and Westlands.">
   <link rel="icon" href="logo/kwanja-mark.svg" type="image/svg+xml">
   <link rel="preload" href="fonts/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="manifest" href="manifest.webmanifest">
@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="ledger.css">
   <link rel="stylesheet" href="public.css">
   <script src="config.js?v=1c8a15befd3f"></script>
-  <script src="ledger.js?v=cf8dc2a6f316" defer></script>
+  <script src="ledger.js?v=f531395208dd" defer></script>
 </head>
 <body class="is-welcome">
   <svg xmlns="http://www.w3.org/2000/svg" class="icon-library" aria-hidden="true">
@@ -66,7 +66,7 @@
         <section class="banner" id="banner" aria-live="polite"></section>
 
         <section class="section" id="follow-section" aria-labelledby="chase-title">
-          <div class="section-head"><h2 id="chase-title">Follow up</h2><button class="mini" type="button" data-action="new"><svg class="icon"><use href="#i-plus"/></svg>Add</button></div>
+          <div class="section-head"><h2 id="chase-title">Follow up</h2><a class="more" id="follow-all" href="#ledger/followup" hidden>View queue</a><button class="mini" id="legacy-follow-add" type="button" data-action="new"><svg class="icon"><use href="#i-plus"/></svg>Add</button></div>
           <div id="follow-list" class="chase-row"></div>
         </section>
 
@@ -78,13 +78,14 @@
 
       <section id="ledger-view" aria-label="Ledger entries" hidden>
         <h1 class="view-title">Ledger</h1>
-        <p class="view-sub" id="ledger-sub"></p>
+        <p class="view-sub" id="ledger-sub"></p><button class="mini import-button" type="button" data-action="import" id="import-entry" hidden>Import CSV</button>
         <label class="search"><svg class="icon"><use href="#i-search"/></svg><input id="search" type="search" placeholder="Search ledger" aria-label="Search ledger"></label>
         <div id="filters" class="filters" aria-label="Filter entries">
           <a href="#ledger" data-filter="all">All</a>
           <a href="#ledger/receivable" data-filter="receivable">Owed to you</a>
           <a href="#ledger/payable" data-filter="payable">You owe</a>
           <a href="#ledger/paid" data-filter="paid">Settled</a>
+          <a href="#ledger/followup" data-filter="followup" id="follow-filter" hidden>Follow-up due</a>
         </div>
         <div id="ledger-list" class="cards"></div>
       </section>
@@ -114,35 +115,48 @@
       <main id="public-main" tabindex="-1">
         <section class="public-width public-hero" aria-labelledby="public-title">
           <div class="hero-copy">
-            <p class="eyebrow"><span class="lime-dot"></span>A debt ledger for Kenyan businesses</p>
-            <h1 id="public-title" tabindex="-1">Know who owes you. <mark>Get paid.</mark></h1>
-            <p class="lede">Keep customer credit, supplier debts and partial payments in one place. When it is time to follow up, send a WhatsApp reminder with the right balance.</p>
-            <div class="hero-actions"><a class="pill primary large" href="#signup">Create account</a><a class="pill light large" href="#how-it-works">See how it works</a></div>
+            <p class="eyebrow"><span class="lime-dot"></span>For tech shops and repair shops in Nairobi</p>
+            <h1 id="public-title" tabindex="-1">Track repair balances. <mark>Get paid.</mark></h1>
+            <p class="lede">Record deposits, pickup dates and device sales on credit. See what each customer still owes when they return to your shop.</p>
+            <div class="hero-actions"><a class="pill primary large" href="#signup">Create account</a><a class="pill light large" href="#repair-demo">Try a repair demo</a></div>
             <button class="public-demo link" type="button" data-action="skip" hidden>Explore the demo ledger</button>
           </div>
           <figure class="sample" aria-label="Example ledger showing what customers still owe">
             <span class="coin" aria-hidden="true"><svg class="icon"><use href="#i-whatsapp"/></svg></span>
-            <div class="sample-top"><span><svg class="icon" aria-hidden="true"><use href="#i-ledger"/></svg>Wanjiru Traders</span><span class="chip">Sample ledger</span></div>
+            <div class="sample-top"><span><svg class="icon" aria-hidden="true"><use href="#i-ledger"/></svg>Westlands Device Repair</span><span class="chip">Sample ledger</span></div>
             <div class="sample-balance"><span>Owed to you</span><strong><small>KES</small> 31,600</strong></div>
-            <div class="sample-row"><span class="contact-avatar avatar-0" aria-hidden="true">MN</span><div><b>Mama Njeri</b><small>Groceries · partial payment</small></div><div><b class="plus">+KES 6,200</b><small class="late">Overdue</small></div></div>
-            <div class="sample-row"><span class="contact-avatar avatar-3" aria-hidden="true">KH</span><div><b>Kamau Hardware</b><small>Building supplies</small></div><div><b class="plus">+KES 25,400</b><small>Due 2 Dec</small></div></div>
+            <div class="sample-row"><span class="contact-avatar avatar-0" aria-hidden="true">AM</span><div><b>Amina Mwangi</b><small>Laptop screen replacement · deposit paid</small></div><div><b class="plus">+KES 6,200</b><small class="late">Overdue</small></div></div>
+            <div class="sample-row"><span class="contact-avatar avatar-3" aria-hidden="true">MI</span><div><b>Metro IT Services</b><small>Refurbished laptop sale on credit</small></div><div><b class="plus">+KES 25,400</b><small>Due 2 Dec</small></div></div>
             <figcaption><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg>Review a reminder before sending it on WhatsApp</figcaption>
           </figure>
         </section>
+        <section class="public-width public-section" id="repair-demo" aria-labelledby="repair-demo-title">
+          <div class="section-intro"><h2 id="repair-demo-title">Try a repair balance</h2><p class="section-lede">Use a sample job before creating an account.</p></div>
+          <div class="repair-demo">
+            <div class="repair-demo-job"><strong>Laptop screen replacement</strong><span>Amina Mwangi · Job WS-014</span><span>KES 8,200 total · KES 2,000 deposit already paid</span></div>
+            <p class="repair-demo-balance" id="repair-demo-balance" role="status">Balance KES 6,200</p>
+            <div class="hero-actions">
+              <button class="pill primary" type="button" data-action="repair-demo-payment">Record KES 2,000 payment</button>
+              <button class="pill light" type="button" data-action="repair-demo-reminder">Preview reminder</button>
+              <button class="link" type="button" data-action="repair-demo-reset" hidden>Reset example</button>
+            </div>
+            <div class="repair-demo-reminder" id="repair-demo-reminder" hidden><strong>WhatsApp draft</strong><p id="repair-demo-message"></p></div>
+          </div>
+        </section>
         <section class="public-width public-section" id="how-it-works" aria-labelledby="how-heading">
-          <div class="section-intro"><p class="eyebrow"><span class="lime-dot"></span>How it works</p><h2 id="how-heading">From selling on credit to settling up.</h2><p class="section-lede">Three steps, no notebooks.</p></div>
+          <div class="section-intro"><p class="eyebrow"><span class="lime-dot"></span>How it works</p><h2 id="how-heading">From the repair counter to payment.</h2><p class="section-lede">Keep the payment details with the job.</p></div>
           <div class="public-steps">
-            <article><span class="step-badge"><svg class="icon" aria-hidden="true"><use href="#i-ledger"/></svg></span><h3>Record the debt</h3><p>Add a customer or supplier, the amount in KES, and a due date if you have agreed on one.</p></article>
-            <article><span class="step-badge"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg></span><h3>Follow up clearly</h3><p>Open an editable WhatsApp draft with the outstanding amount. Review the message and send it when you are ready.</p></article>
+            <article><span class="step-badge"><svg class="icon" aria-hidden="true"><use href="#i-ledger"/></svg></span><h3>Record the job or sale</h3><p>Add the customer, total, and any deposit already paid. Keep the job reference, pickup date, and payment due date together.</p></article>
+            <article><span class="step-badge"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg></span><h3>Follow up clearly</h3><p>See which customers are due for a follow-up. Open a WhatsApp draft with the outstanding amount and note when they promise to pay.</p></article>
             <article><span class="step-badge"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><h3>Record the payment</h3><p>Enter a payment yourself or paste a supported M-Pesa SMS and review the details. Partial payments reduce the balance as you record them.</p><p class="step-note"><img class="brand-mark" src="brands/mpesa.svg" alt="M-Pesa">Reads M-Pesa confirmation messages</p></article>
           </div>
         </section>
         <section class="public-width" id="about" aria-labelledby="about-heading">
           <div class="public-dark about-panel">
             <p class="eyebrow on-dark"><span class="lime-dot"></span>About Kwanja</p>
-            <h2 id="about-heading">Credit is part of everyday business.</h2>
-            <div class="about-copy"><p>A neighbour takes groceries today and pays on Friday. A supplier delivers stock and gives you a week to settle. When those promises are spread across notebooks, messages and memory, it is easy to lose track of the balance.</p>
-            <p>Kwanja is built for shopkeepers, wholesalers, salons and other small businesses in Kenya. It brings customer and supplier balances together, works in Kenyan shillings, and fits the way merchants already use WhatsApp and M-Pesa.</p></div>
+            <h2 id="about-heading">Built for Nairobi’s tech and repair shops</h2>
+            <div class="about-copy"><p>A customer leaves a deposit for a screen replacement and pays the balance at pickup. Another takes a refurbished laptop on credit. A parts supplier gives you a week to pay. Kwanja keeps these amounts together.</p>
+            <p>Kwanja is for phone and computer repair shops, device retailers, and parts sellers across Nairobi, including Westlands. It works in Kenyan shillings and fits the way these shops already use WhatsApp and M-Pesa.</p></div>
           </div>
         </section>
         <section class="public-width public-section" id="questions" aria-labelledby="faq-heading">
@@ -154,7 +168,7 @@
             <details><summary>Can I download my records?</summary><p>Yes. Export the ledger to CSV for your records or to open in a spreadsheet.</p></details>
           </div>
         </section>
-        <section class="public-width public-cta" aria-labelledby="cta-heading"><h2 id="cta-heading">Start with your first debt.</h2><a class="pill primary large" href="#signup">Create account</a></section>
+        <section class="public-width public-cta" aria-labelledby="cta-heading"><h2 id="cta-heading">Record your first repair balance.</h2><a class="pill primary large" href="#signup">Create account</a></section>
       </main>
       <footer class="public-footer"><div class="public-width"><a class="brand" href="#home" aria-label="Kwanja home"><img src="logo/kwanja-lockup.svg" alt="Kwanja"></a><a href="#about">About us</a><a href="#questions">FAQ</a><a href="#login">Log in</a></div></footer>
     </div>
@@ -163,11 +177,11 @@
       <aside class="auth-side">
         <a class="brand" href="#home" aria-label="Kwanja home"><img src="logo/kwanja-lockup-mono-black.svg" alt="Kwanja"></a>
         <div class="auth-art" aria-hidden="true">
-          <div class="w-card c3"><b>Baraka Wholesalers</b><span>KES 18,400</span></div>
-          <div class="w-card c2"><b>Kamau Hardware</b><span>KES 28,400</span></div>
-          <div class="w-card c1"><b>Mama Njeri</b><span>KES 6,200</span><i>Overdue</i></div>
+          <div class="w-card c3"><b>City Parts Supply</b><span>KES 18,400</span></div>
+          <div class="w-card c2"><b>Metro IT Services</b><span>KES 28,400</span></div>
+          <div class="w-card c1"><b>Amina Mwangi</b><span>KES 6,200</span><i>Overdue</i></div>
         </div>
-        <div class="auth-pitch"><strong>Your business ledger</strong><p>Track customer credit, supplier debts and partial payments.</p></div>
+        <div class="auth-pitch"><strong>Your business ledger</strong><p>Track repair deposits, device credit and parts bills.</p></div>
       </aside>
       <div class="auth-content">
         <a class="auth-back" href="#home"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg>Back to Kwanja</a>
@@ -204,7 +218,7 @@
             <h1 tabindex="-1">Set up your ledger</h1>
             <p class="w-sub">Your business name appears in your ledger and in the reminders you prepare for customers.</p>
             <form class="auth-form" data-form="business">
-              <label class="field"><span>Business name</span><input name="business" maxlength="100" autocomplete="organization" placeholder="e.g. Wanjiru Traders" required></label>
+              <label class="field"><span>Business name</span><input name="business" maxlength="100" autocomplete="organization" placeholder="e.g. Westlands Device Repair" required></label>
               <p class="form-error" role="alert" hidden></p>
               <button class="pill primary large block" type="submit">Create my ledger</button>
             </form>
