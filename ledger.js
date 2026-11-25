@@ -301,14 +301,12 @@ function route() {
 const searchText = (value) => value.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
 const searchReference = (value) => searchText(value).replace(/[\s./_-]+/g, '');
 
-function renderLedger() {
-  const { filter } = route();
-  const query = searchText(byId('search').value);
+function ledgerResults(filter, query) {
   const reference = searchReference(query);
   const phoneDigits = /^[+\d\s().-]+$/.test(query) ? query.replace(/\D/g, '') : '';
   const base = filter === 'followup'
     ? followUpQueue(entries.filter((entry) => entry.direction === 'receivable' && outstanding(entry) > 0), localDate()) : sortedEntries();
-  const rows = base.filter((entry) => {
+  return base.filter((entry) => {
     const matchesFilter = filter === 'all' || filter === 'followup' || (filter === 'paid' ? !outstanding(entry) : filter === entry.direction && outstanding(entry) > 0);
     if (!matchesFilter) return false;
     if (!query || searchText(`${entry.contact} ${entryDescription(entry)}`).includes(query)) return true;
@@ -318,7 +316,12 @@ function renderLedger() {
     const storedDigits = (mobile || entry.phone).replace(/\D/g, '');
     return storedDigits.includes(phoneDigits) || Boolean(mobile && `0${storedDigits.slice(3)}`.includes(phoneDigits));
   });
+}
 
+function renderLedger() {
+  const { filter } = route();
+  const query = searchText(byId('search').value);
+  const rows = ledgerResults(filter, query);
   document.querySelectorAll('[data-filter]').forEach((link) => {
     if (link.dataset.filter === filter) link.setAttribute('aria-current', 'true');
     else link.removeAttribute('aria-current');
@@ -849,31 +852,73 @@ function downloadImportTemplate() {
   downloadCsv(new Blob([text], { type: 'text/csv;charset=utf-8' }), 'kwanja-import-template.csv', 'Template downloaded.');
 }
 
-async function exportLedger() {
-  if (apiMode && !navigator.onLine) {
-    notify('You’re offline. Reconnect to export your ledger.');
-    return;
-  }
-  if (apiMode) {
-    try {
-      downloadCsv(await (await api('/export.csv')).blob());
-    } catch {
-      notify('Could not export the ledger. Try again.');
-    }
-    return;
-  }
+function showExport() {
+  const { filter } = route();
+  const query = searchText(byId('search').value);
+  const count = ledgerResults(filter, query).length;
+  const preferCurrent = count > 0 && (query || filter !== 'all' || (apiMode && !navigator.onLine));
+  showDialog('Export CSV', `<form class="form" data-form="export">
+    <fieldset class="export-options">
+      <legend class="sr-only">Which entries to export</legend>
+      <label class="export-option">
+        <input type="radio" name="scope" value="full"${preferCurrent ? '' : ' checked'}>
+        <span><strong>Full ledger</strong><small>Every entry in your shop ledger.${apiMode ? ' Requires a connection.' : ''}</small></span>
+      </label>
+      <label class="export-option">
+        <input type="radio" name="scope" value="current"${preferCurrent ? ' checked' : ''}${count ? '' : ' disabled'}>
+        <span><strong>Current results</strong><small>${count ? `${plural(count, 'entry', 'entries')} in your current view.` : 'No entries match your current view.'}</small></span>
+      </label>
+    </fieldset>
+    <p class="form-error" role="alert" hidden></p>
+    <button class="button primary" type="submit">Download CSV</button>
+  </form>`);
+}
+
+function ledgerCsv(entriesToExport) {
   const csvCell = (value) => {
     const text = String(value);
     const safeText = typeof value === 'string' && /^[\s]*[=+\-@]/.test(text) ? `'${text}` : text;
     return `"${safeText.replaceAll('"', '""')}"`;
   };
-  const rows = sortedEntries().map((entry) => [
-    entry.contact, directions[entry.direction], entry.note, entry.date, entry.due,
-    entry.cents / 100, paidTotal(entry) / 100, outstanding(entry) / 100,
-  ]);
-  rows.unshift(['Contact', 'Direction', 'Note', 'Date added', 'Due date', 'Original (KES)', 'Paid (KES)', 'Outstanding (KES)']);
-  const blob = new Blob([rows.map((row) => row.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
-  downloadCsv(blob);
+  const rows = [['Contact', 'Direction', 'Note', 'Date added', 'Due date', 'Original (KES)', 'Paid (KES)', 'Outstanding (KES)']];
+  for (const entry of entriesToExport) {
+    rows.push([
+      entry.contact, directions[entry.direction], entry.note || '', entry.date, entry.due || '',
+      (entry.cents / 100).toFixed(2), (paidTotal(entry) / 100).toFixed(2), (outstanding(entry) / 100).toFixed(2),
+    ]);
+  }
+  const csv = rows.map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
+  return new Blob([csv], { type: 'text/csv;charset=utf-8' });
+}
+
+async function exportLedger(form, values) {
+  if (values.scope === 'current') {
+    const rows = ledgerResults(route().filter, searchText(byId('search').value));
+    if (!rows.length) {
+      showError(form, 'No entries match your current view.');
+      return;
+    }
+    downloadCsv(ledgerCsv(rows), `kwanja-results-${localDate()}.csv`, `${plural(rows.length, 'entry', 'entries')} exported.`);
+    dialog.close();
+    return;
+  }
+  if (apiMode && !navigator.onLine) {
+    showError(form, 'You’re offline. Reconnect to export the full ledger.');
+    return;
+  }
+  const buttons = [form.querySelector('[type="submit"]'), dialog.querySelector('[data-action="close"]')];
+  form.dataset.busy = 'true';
+  buttons.forEach((button) => { button.disabled = true; });
+  try {
+    const blob = apiMode ? await (await api('/export.csv')).blob() : ledgerCsv(sortedEntries());
+    downloadCsv(blob);
+    dialog.close();
+  } catch {
+    showError(form, 'Could not export the full ledger. Try again.');
+  } finally {
+    delete form.dataset.busy;
+    buttons.forEach((button) => { button.disabled = false; });
+  }
 }
 
 function downloadCsv(blob, filename = `kwanja-ledger-${localDate()}.csv`, message = 'Ledger exported.') {
@@ -910,7 +955,7 @@ const clickActions = {
   },
   'repeat-entry': () => showNew(activeEntry),
   retry: loadApiLedger,
-  export: exportLedger,
+  export: showExport,
   import: () => showImport(),
   'install-app': installApp,
   walkthrough: () => showWalkthrough(),
@@ -944,7 +989,7 @@ const clickActions = {
 };
 const submitActions = {
   new: submitNew, payment: submitPayment, sms: submitSms, reminder: submitReminder,
-  'follow-up': submitFollowUp, 'import-preview': previewImport, 'import-save': saveImport,
+  'follow-up': submitFollowUp, 'import-preview': previewImport, 'import-save': saveImport, export: exportLedger,
 };
 
 let installPrompt;
@@ -1438,7 +1483,7 @@ dialog.addEventListener('submit', (event) => {
   event.preventDefault();
   const form = event.target;
   if (form.dataset.busy) return;
-  if (apiMode && !navigator.onLine) {
+  if (apiMode && !navigator.onLine && form.dataset.form !== 'export') {
     showError(form, 'You’re offline. Leave this form open and try again when you reconnect.');
     return;
   }
