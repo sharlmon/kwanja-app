@@ -1,1 +1,1 @@
-window.KWANJA_API = null;
+window.KWANJA_API = "https://kwanja-api.asudi.tech";
