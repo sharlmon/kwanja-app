@@ -12,10 +12,10 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <link rel="stylesheet" href="ledger.css?v=d5f1a12680fb">
+  <link rel="stylesheet" href="ledger.css?v=e6bf51d73141">
   <link rel="stylesheet" href="public.css?v=4dbd3f811d15">
   <script src="config.js?v=e29e0d7d06cd"></script>
-  <script src="ledger.js?v=a174ca817c24" defer></script>
+  <script src="ledger.js?v=fa27990c7751" defer></script>
 </head>
 <body class="is-welcome">
   <svg xmlns="http://www.w3.org/2000/svg" class="icon-library" aria-hidden="true">
@@ -93,7 +93,11 @@
 
       <section id="contacts-view" aria-label="Contacts" hidden><h1 class="view-title">Contacts</h1><p class="view-sub" id="contacts-sub"></p><div id="contacts-list"></div>
         <div id="account" class="contact-group account" hidden><h2>Account</h2><p class="help" id="account-email"></p><button class="button" type="button" data-action="account-security" hidden>Manage password</button><button class="button" type="button" data-action="signout">Sign out</button></div>
-        <button class="button workspace-install" type="button" data-action="install-app" hidden><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>Install Kwanja</button></section>
+        <div class="workspace-tools">
+          <button class="button" type="button" data-action="walkthrough">Replay walkthrough</button>
+          <button class="button" type="button" data-action="install-app" hidden><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>Install Kwanja</button>
+        </div>
+      </section>
     </main>
 
     <nav class="dock" aria-label="Workspace">

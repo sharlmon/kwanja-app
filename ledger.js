@@ -160,6 +160,7 @@ async function loadApiLedger() {
     status.innerHTML = 'Could not connect to the ledger. <button class="button" type="button" data-action="retry">Try again</button>';
   }
   render();
+  if (status.hidden) offerWalkthrough();
 }
 
 async function submitToApi(form, path, payload, idempotent = true) {
@@ -369,6 +370,55 @@ function showDialog(title, content, focusSelector) {
   if (target) target.focus();
   else byId('dialog-title').focus();
   dialog.scrollTop = 0;
+}
+
+const walkthroughSteps = [
+  ['Add your first debt', 'plus', 'Use the + button to log what a customer owes you or what you owe a supplier.'],
+  ['Record a payment', 'check', 'Open a ledger entry and choose Record payment. Enter the amount received or paid. A partial payment reduces the outstanding balance and appears in the payment history.'],
+  ['Follow up on a balance', 'whatsapp', 'Check Follow up on Overview for customer balances due. Open a WhatsApp reminder to review the message before sending it.'],
+];
+const seenWalkthroughs = new Set();
+
+function walkthroughKey() {
+  if (authMode === 'clerk') return clerk?.user?.id ? `kwanja-walkthrough:${clerk.user.id}` : '';
+  return 'kwanja-walkthrough:demo';
+}
+
+function offerWalkthrough() {
+  if (dialog.open || !welcome.hidden || (authMode === 'clerk' && entries.length)) return;
+  const key = walkthroughKey();
+  if (!key || seenWalkthroughs.has(key)) return;
+  try { if (localStorage.getItem(key)) return; } catch { /* storage unavailable */ }
+  if (!byId('main').contains(document.activeElement)) byId('main').focus({ preventScroll: true });
+  showWalkthrough();
+}
+
+function showWalkthrough(index = 0) {
+  const [title, symbol, copy] = walkthroughSteps[index];
+  const last = index === walkthroughSteps.length - 1;
+  let description = copy;
+  if (workshopLedger && index === 0) description += ' For a repair, you can include the job reference, deposit and pickup date.';
+  if (!workshopLedger && last) description = 'Open a customer’s unpaid entry and choose WhatsApp reminder. Review the amount and message before sending it.';
+  showDialog(title, `<div class="walkthrough" data-walkthrough-step="${index}">
+    <div class="walkthrough-card">
+      <span class="walkthrough-icon">${icon(symbol)}</span>
+      <div><p class="walkthrough-count">Step ${index + 1} of ${walkthroughSteps.length}</p><p>${description}</p></div>
+    </div>
+    <div class="walkthrough-actions">
+      <button class="link" type="button" data-action="close">${last ? 'Done' : 'Skip walkthrough'}</button>
+      <div>
+        ${index ? '<button class="button" type="button" data-action="walkthrough-back">Back</button>' : ''}
+        <button class="button primary" type="button" data-action="${last ? 'walkthrough-add' : 'walkthrough-next'}">${last ? 'Add a debt' : 'Next'}</button>
+      </div>
+    </div>
+  </div>`);
+}
+
+function rememberWalkthrough() {
+  const key = walkthroughKey();
+  if (!key) return;
+  seenWalkthroughs.add(key);
+  try { localStorage.setItem(key, '1'); } catch { /* storage unavailable */ }
 }
 
 function field(label, control, help = '') {
@@ -827,6 +877,13 @@ const clickActions = {
   export: exportLedger,
   import: () => showImport(),
   'install-app': installApp,
+  walkthrough: () => showWalkthrough(),
+  'walkthrough-next': (button) => showWalkthrough(Number(button.closest('.walkthrough').dataset.walkthroughStep) + 1),
+  'walkthrough-back': (button) => showWalkthrough(Number(button.closest('.walkthrough').dataset.walkthroughStep) - 1),
+  'walkthrough-add': () => {
+    rememberWalkthrough();
+    showNew();
+  },
   'import-template': downloadImportTemplate,
   'import-edit': () => showImport(stagedImport),
   'repair-demo-payment': (button) => {
@@ -942,6 +999,7 @@ async function finishDemo() {
   try { localStorage.setItem(onboardedKey, '1'); } catch { /* storage unavailable */ }
   hideWelcome();
   render();
+  offerWalkthrough();
 }
 
 function stepError(step, message) {
@@ -1412,6 +1470,7 @@ dialog.addEventListener('cancel', (event) => {
 
 dialog.addEventListener('close', () => {
   stagedImport = '';
+  if (dialogContent.querySelector('.walkthrough')) rememberWalkthrough();
   const entryId = returnFocus?.dataset.entry;
   const replacement = entryId && [...byId(`${route().page}-view`).querySelectorAll('[data-entry]')].find((element) => element.dataset.entry === entryId);
   (returnFocus?.isConnected ? returnFocus : replacement || document.querySelector('.pill-dark')).focus();
