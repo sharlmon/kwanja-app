@@ -5,11 +5,15 @@ const storageKey = 'kwanja-demo-ledger';
 // config.js sets window.KWANJA_API: '' = same origin as the page, 'https://api.example.com' = a separate API origin, null = offline demo.
 const apiBase = window.KWANJA_API === undefined ? '' : window.KWANJA_API;
 const apiMode = apiBase !== null && (location.protocol === 'http:' || location.protocol === 'https:');
+const pwaEnabled = window.KWANJA_PWA === true && 'serviceWorker' in navigator;
 const demoBusiness = 'Westlands Device Repair';
 const nairobiDate = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Africa/Nairobi', year: 'numeric', month: '2-digit', day: '2-digit',
 });
 const dateFormat = new Intl.DateTimeFormat('en-KE', { day: 'numeric', month: 'short' });
+const pickerDateFormat = new Intl.DateTimeFormat('en-KE', { day: 'numeric', month: 'short', year: 'numeric' });
+const pickerMonthFormat = new Intl.DateTimeFormat('en-KE', { month: 'long', year: 'numeric' });
+const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const numberFormat = new Intl.NumberFormat('en-KE');
 const decimalFormat = new Intl.NumberFormat('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const directions = { receivable: 'Owed to you', payable: 'You owe' };
@@ -28,7 +32,7 @@ function localDate(date = ledgerDay()) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return `${String(year).padStart(4, '0')}-${month}-${day}`;
 }
 
 function daysFromToday(days) {
@@ -127,6 +131,7 @@ async function authHeaders() {
 }
 
 async function api(path, options = {}) {
+  if (!navigator.onLine) throw new Error('You’re offline. Reconnect and try again.');
   const response = await fetch(`${apiBase}/api${path}`, { ...options, headers: { ...options.headers, ...(await authHeaders()) }, cache: 'no-store' });
   if (response.status === 401 && authMode === 'clerk') {
     await leaveSession({ expired: true });
@@ -168,7 +173,7 @@ async function submitToApi(form, path, payload, idempotent = true) {
     headers['Idempotency-Key'] = form.dataset.requestKey;
   }
   form.dataset.busy = 'true';
-  const buttons = [...form.querySelectorAll('button'), dialog.querySelector('[data-action="close"]')];
+  const buttons = [...form.querySelectorAll('button:not(:disabled)'), dialog.querySelector('[data-action="close"]')];
   buttons.forEach((button) => { button.disabled = true; });
   try {
     return await (await api(path, { method: 'POST', headers, body: data })).json();
@@ -327,7 +332,7 @@ function renderContacts() {
       const net = contactEntries.reduce((sum, entry) => sum + (entry.direction === 'payable' ? -outstanding(entry) : outstanding(entry)), 0);
       const open = contactEntries.filter((entry) => outstanding(entry) > 0).length;
       const tone = net > 0 ? 'receivable' : net < 0 ? 'payable' : 'settled';
-      const amount = net === 0 ? 'Settled' : `${net > 0 ? '+' : '\u2212'}${money(Math.abs(net))}`;
+      const amount = net === 0 ? (open ? money(0) : 'Settled') : `${net > 0 ? '+' : '\u2212'}${money(Math.abs(net))}`;
       return `<section class="contact-group"><header class="cg-head">${avatar(contactEntries[0].contact)}
         <span class="row-main"><h2>${escape(contactEntries[0].contact)}</h2><small>${open ? plural(open, 'open entry', 'open entries') : 'All settled'}</small></span>
         <strong class="cg-net ${tone}">${amount}</strong></header>
@@ -363,10 +368,68 @@ function showDialog(title, content, focusSelector) {
   const target = focusSelector && dialogContent.querySelector(focusSelector);
   if (target) target.focus();
   else byId('dialog-title').focus();
+  dialog.scrollTop = 0;
 }
 
 function field(label, control, help = '') {
   return `<label class="field"><span>${label}</span>${control}${help ? `<small>${help}</small>` : ''}</label>`;
+}
+
+function dateField(label, name, value = '', help = '') {
+  return `<div class="field date-field">
+    <span id="date-label-${name}">${label}</span>
+    <input type="hidden" name="${name}" value="${escape(value)}">
+    <details class="date-picker">
+      <summary aria-labelledby="date-label-${name} date-value-${name}" ${help ? `aria-describedby="date-help-${name}"` : ''}>
+        <span id="date-value-${name}" class="date-value" data-empty="${!value}">${value ? pickerDateFormat.format(new Date(`${value}T00:00:00`)) : 'Choose a date'}</span>
+        <svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg>
+      </summary>
+      <div class="date-panel"></div>
+    </details>
+    ${help ? `<small id="date-help-${name}">${help}</small>` : ''}
+  </div>`;
+}
+
+function renderCalendar(picker, date, focusDay = false) {
+  const today = localDate();
+  const selected = picker.previousElementSibling.value;
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const first = new Date(date);
+  first.setDate(1);
+  const last = new Date(first);
+  last.setMonth(month + 1, 0);
+  const offset = (first.getDay() + 6) % 7;
+  const panel = picker.querySelector('.date-panel');
+  panel.innerHTML = `<div class="date-heading">
+    <button type="button" data-month="-1" aria-label="Previous month"${year === 1 && month === 0 ? ' disabled' : ''}><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+    <strong aria-live="polite">${pickerMonthFormat.format(date)}</strong>
+    <button type="button" data-month="1" aria-label="Next month"${year === 9999 && month === 11 ? ' disabled' : ''}><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+  </div>
+  <div class="date-days">
+    ${weekdays.map((day) => `<abbr title="${day}">${day.slice(0, 2)}</abbr>`).join('')}
+    ${'<span aria-hidden="true"></span>'.repeat(offset)}
+    ${Array.from({ length: last.getDate() }, (_, index) => {
+      const day = new Date(first);
+      day.setDate(index + 1);
+      const value = localDate(day);
+      return `<button type="button" data-day="${value}" aria-label="${pickerDateFormat.format(day)}" aria-pressed="${selected === value}"${value === today ? ' aria-current="date"' : ''} tabindex="${day.getDate() === date.getDate() ? 0 : -1}">${day.getDate()}</button>`;
+    }).join('')}
+  </div>
+  <div class="date-actions">
+    <button type="button" data-set-date="${today}">Today</button>
+    <button type="button" data-set-date=""${selected ? '' : ' disabled'}>Clear date</button>
+  </div>`;
+  if (focusDay) panel.querySelector('[data-day][tabindex="0"]').focus();
+}
+
+function selectCalendarDate(picker, value) {
+  picker.previousElementSibling.value = value;
+  const label = picker.querySelector('.date-value');
+  label.textContent = value ? pickerDateFormat.format(new Date(`${value}T00:00:00`)) : 'Choose a date';
+  label.dataset.empty = String(!value);
+  picker.open = false;
+  picker.querySelector('summary').focus();
 }
 
 function showNew() {
@@ -382,14 +445,12 @@ function showNew() {
     ${workshopLedger ? `<div class="field-grid">
       ${field('Job or sale type', `<select name="kind"><option value="">Choose a type</option>${Object.entries(entryKinds).map(([key, label]) => `<option value="${key}">${label}</option>`).join('')}</select>`)}
       ${field('Reference (optional)', '<input name="job_reference" maxlength="40" placeholder="e.g. WS-014">')}
-      ${field('Deposit already paid (KES)', '<input name="deposit" type="number" min="0" max="1000000000" step="0.01" inputmode="decimal" placeholder="Optional">')}
-      ${field('Pickup date (optional)', '<input type="date" name="pickup_on">')}
     </div>
+    ${field('Customer deposit already paid (optional)', '<input name="deposit" type="number" min="0" max="1000000000" step="0.01" inputmode="decimal" placeholder="KES">')}
+    ${dateField('Pickup date (optional)', 'pickup_on')}
     ${field('Contact’s mobile number (optional)', '<input name="phone" type="tel" inputmode="tel" maxlength="24" placeholder="07XX XXX XXX">')}` : ''}
-    <div class="field-grid">
-      ${field('Payment due date', '<input type="date" name="due">')}
-      ${field('Note', '<input name="note" maxlength="120" placeholder="e.g. Screen replacement">')}
-    </div>
+    ${dateField('Payment due date (optional)', 'due')}
+    ${field('Note (optional)', '<input name="note" maxlength="120" placeholder="e.g. Screen replacement">')}
     <p class="form-error" role="alert" hidden></p>
     <div class="form-actions"><button class="button primary" type="submit">Save debt</button></div>
   </form>`, '[name=contact]');
@@ -496,7 +557,7 @@ function showFollowUp() {
   const customer = entry.direction === 'receivable';
   showDialog(customer ? 'Follow-up details' : 'Contact number', `<form class="form" data-form="follow-up">
     ${field('Saved mobile number', `<input name="phone" type="tel" maxlength="24" placeholder="07XX XXX XXX" value="${escape(entry.phone || '')}">`, 'Used in future WhatsApp drafts for this contact.')}
-    ${customer ? `${field('Promised payment date', `<input name="promised_on" type="date" value="${entry.promised_on || ''}">`, 'A promise date schedules the next follow-up. The original payment due date stays on the entry.')}
+    ${customer ? `${dateField('Promised payment date', 'promised_on', entry.promised_on || '', 'A promise date schedules the next follow-up. The original payment due date stays on the entry.')}
     <label class="workshop-check"><input name="contacted" type="checkbox">I contacted this customer today</label>` : ''}
     <p class="form-error" role="alert" hidden></p>
     <div class="form-actions"><button class="button primary" type="submit">Save details</button><button class="button" type="button" data-action="back">Back</button></div>
@@ -547,7 +608,7 @@ async function submitNew(form, values) {
     return;
   }
   if (deposit > cents || (deposit && values.direction !== 'receivable')) {
-    showError(form, 'The customer deposit must be at most the total amount.');
+    showError(form, 'Enter a customer deposit no greater than the total amount, or leave it blank.');
     return;
   }
   const ledgerFields = { contact, direction: values.direction, cents, due: values.due || null, note: values.note.trim() };
@@ -713,6 +774,10 @@ function downloadImportTemplate() {
 }
 
 async function exportLedger() {
+  if (apiMode && !navigator.onLine) {
+    notify('You’re offline. Reconnect to export your ledger.');
+    return;
+  }
   if (apiMode) {
     try {
       downloadCsv(await (await api('/export.csv')).blob());
@@ -761,6 +826,7 @@ const clickActions = {
   retry: loadApiLedger,
   export: exportLedger,
   import: () => showImport(),
+  'install-app': installApp,
   'import-template': downloadImportTemplate,
   'import-edit': () => showImport(stagedImport),
   'repair-demo-payment': (button) => {
@@ -787,6 +853,38 @@ const submitActions = {
   new: submitNew, payment: submitPayment, sms: submitSms, reminder: submitReminder,
   'follow-up': submitFollowUp, 'import-preview': previewImport, 'import-save': saveImport,
 };
+
+let installPrompt;
+const standalone = window.matchMedia('(display-mode: standalone)');
+
+function showInstallButtons(installed = false) {
+  document.querySelectorAll('[data-action="install-app"]').forEach((button) => {
+    button.hidden = !pwaEnabled || installed || standalone.matches || navigator.standalone === true;
+  });
+}
+
+async function installApp() {
+  if (installPrompt) {
+    const prompt = installPrompt;
+    installPrompt = null;
+    try {
+      await prompt.prompt();
+      if ((await prompt.userChoice).outcome === 'accepted') showInstallButtons(true);
+      return;
+    } catch { /* Fall back to the browser's install steps. */ }
+  }
+  showDialog('Install Kwanja', `<ul class="install-guide">
+    <li><strong>Android</strong><p>In Chrome, open the menu and choose Install app or Add to Home screen.</p></li>
+    <li><strong>iPhone or iPad</strong><p>In Safari, open Share and choose Add to Home Screen. Turn on Open as Web App if shown, then tap Add.</p></li>
+    <li><strong>Computer</strong><p>In Chrome or Edge, look for Install in the address bar or browser menu. In Safari on Mac, choose File → Add to Dock.</p></li>
+  </ul>`);
+}
+
+function updateOfflineStatus() {
+  const offline = apiMode && !navigator.onLine;
+  byId('public-offline').hidden = !offline;
+  byId('workspace-offline').hidden = !offline || !apiReady;
+}
 
 /* The public website and account setup use the same entry point as the ledger. */
 const onboardedKey = 'kwanja-onboarded';
@@ -869,7 +967,7 @@ function updateEmailScreen() {
   link.textContent = login ? 'Create account' : 'Log in';
   const form = welcome.querySelector('[data-form="email"]');
   const submit = form.querySelector('[type="submit"]');
-  submit.disabled = ['pending', 'unavailable'].includes(authMode);
+  submit.disabled = ['pending', 'unavailable'].includes(authMode) || (apiMode && !navigator.onLine);
   submit.textContent = passwordLogin ? 'Log in' : 'Send code';
   const password = form.elements.password;
   byId('auth-password-field').hidden = !passwordLogin;
@@ -883,7 +981,8 @@ function updateEmailScreen() {
   const providers = byId('auth-providers');
   providers.hidden = authMode !== 'clerk' || !configuredProviders.length;
   providers.querySelectorAll('[data-provider]').forEach((button) => { button.hidden = !configuredProviders.includes(button.dataset.provider); });
-  stepError('email', authMode === 'unavailable' ? 'Sign-in could not load. Try refreshing this page.' : '');
+  stepError('email', apiMode && !navigator.onLine ? 'Reconnect to sign in or create an account.'
+    : authMode === 'unavailable' ? 'Sign-in could not load. Try refreshing this page.' : '');
 }
 
 function publicRoute(focus = true) {
@@ -1198,6 +1297,10 @@ welcome.addEventListener('submit', async (event) => {
   const values = Object.fromEntries(new FormData(form));
   const submit = form.querySelector('[type=submit]');
   if (submit.disabled) return;
+  if (apiMode && !navigator.onLine) {
+    stepError(step, 'You’re offline. Reconnect and try again.');
+    return;
+  }
   submit.disabled = true;
   stepError(step, '');
   try {
@@ -1239,14 +1342,68 @@ document.addEventListener('click', (event) => {
 dialog.addEventListener('submit', (event) => {
   event.preventDefault();
   const form = event.target;
-  if (!form.dataset.busy) submitActions[form.dataset.form](form, Object.fromEntries(new FormData(form)));
+  if (form.dataset.busy) return;
+  if (apiMode && !navigator.onLine) {
+    showError(form, 'You’re offline. Leave this form open and try again when you reconnect.');
+    return;
+  }
+  submitActions[form.dataset.form](form, Object.fromEntries(new FormData(form)));
 });
 
 dialog.addEventListener('change', (event) => {
   const direction = event.target;
   if (direction.name !== 'direction' || direction.form.dataset.form !== 'new') return;
   const deposit = direction.form.elements.deposit;
-  if (deposit) deposit.disabled = direction.value === 'payable';
+  if (deposit) {
+    deposit.disabled = direction.value === 'payable';
+    deposit.closest('.field').hidden = deposit.disabled;
+  }
+});
+
+dialog.addEventListener('toggle', (event) => {
+  const picker = event.target;
+  if (!picker.matches('.date-picker[open]')) return;
+  dialogContent.querySelectorAll('.date-picker[open]').forEach((other) => {
+    if (other !== picker) other.open = false;
+  });
+  const selected = picker.previousElementSibling.value;
+  renderCalendar(picker, selected ? new Date(`${selected}T00:00:00`) : ledgerDay());
+  picker.scrollIntoView({ block: 'nearest' });
+}, true);
+
+dialog.addEventListener('click', (event) => {
+  const button = event.target.closest('.date-panel button');
+  if (!button) return;
+  const picker = button.closest('.date-picker');
+  if (!button.hasAttribute('data-month')) {
+    selectCalendarDate(picker, button.dataset.day ?? button.dataset.setDate);
+    return;
+  }
+  const active = picker.querySelector('[data-day][tabindex="0"]');
+  const date = new Date(`${active.dataset.day}T00:00:00`);
+  date.setMonth(date.getMonth() + Number(button.dataset.month), 1);
+  renderCalendar(picker, date);
+  const next = picker.querySelector(`[data-month="${button.dataset.month}"]:not(:disabled)`);
+  (next || picker.querySelector('[data-day][tabindex="0"]')).focus();
+});
+
+dialog.addEventListener('keydown', (event) => {
+  const picker = event.target.closest('.date-picker[open]');
+  if (!picker) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    picker.open = false;
+    picker.querySelector('summary').focus();
+    return;
+  }
+  const day = event.target.dataset.day;
+  const offset = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[event.key];
+  if (!day || !offset) return;
+  event.preventDefault();
+  const date = new Date(`${day}T00:00:00`);
+  date.setDate(date.getDate() + offset);
+  if (date.getFullYear() < 1 || date.getFullYear() > 9999) return;
+  renderCalendar(picker, date, true);
 });
 
 dialog.addEventListener('cancel', (event) => {
@@ -1298,6 +1455,26 @@ window.addEventListener('storage', (event) => {
   render();
 });
 
+if (pwaEnabled) {
+  const workerUrl = new URL('service-worker.js', document.currentScript.src);
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    installPrompt = event;
+    showInstallButtons();
+  });
+  window.addEventListener('appinstalled', () => {
+    installPrompt = null;
+    showInstallButtons(true);
+  });
+  showInstallButtons();
+  if (navigator.onLine) navigator.serviceWorker.register(workerUrl, { updateViaCache: 'none' }).catch(() => {});
+}
+window.addEventListener('offline', updateOfflineStatus);
+window.addEventListener('online', () => {
+  updateOfflineStatus();
+  if (apiMode && authMode === 'unavailable') bootApi();
+});
+updateOfflineStatus();
 render();
 publicRoute(false);
 if (apiMode) {
