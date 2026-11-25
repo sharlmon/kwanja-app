@@ -401,3 +401,39 @@ dialog::before { content: ""; display: block; width: 38px; height: 4px; margin: 
 .import-rows { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
 .import-rows li { display: grid; gap: 3px; padding: 0 0 8px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
 .import-rows li span { color: var(--ink2); font-size: .9rem; }
+
+/* themed dropdowns */
+.dd { position: relative; }
+.dd-native { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; clip-path: inset(50%); }
+.dd-button { width: 100%; min-height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px 0 18px; border: 0; border-radius: 20px; background: var(--white); box-shadow: var(--soft); color: var(--ink); font: inherit; text-align: left; cursor: pointer; transition: box-shadow .2s; }
+.dd-button:focus-visible, .dd.open .dd-button { outline: 0; box-shadow: 0 0 0 2px var(--ink); }
+.dd-button:disabled { opacity: .5; cursor: default; }
+.dd[data-empty="true"] .dd-value { color: var(--muted); }
+.dd-chevron { width: 18px; height: 18px; flex: none; color: var(--ink2); transform: rotate(90deg); transition: transform .2s var(--ease); }
+.dd.open .dd-chevron { transform: rotate(-90deg); }
+.dd-list { position: absolute; z-index: 60; left: 0; right: 0; top: calc(100% + 6px); max-height: 264px; overflow-y: auto; margin: 0; padding: 6px; list-style: none; background: var(--white); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 24px 44px -20px rgba(20, 20, 30, .4); animation: ddIn .14s var(--ease); }
+.dd-list[hidden] { display: none; }
+.dd.up .dd-list { top: auto; bottom: calc(100% + 6px); }
+.dd-option { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; padding: 8px 12px; border-radius: 12px; cursor: pointer; }
+.dd-option .icon { width: 18px; height: 18px; flex: none; opacity: 0; }
+.dd-option[aria-selected="true"] { background: var(--lime-soft); color: var(--lime-ink); font-weight: 600; }
+.dd-option[aria-selected="true"] .icon { opacity: 1; }
+.dd-option.active:not([aria-selected="true"]) { background: var(--page2); }
+.dd-option[aria-disabled="true"] { opacity: .45; cursor: default; }
+.dd-suggest .dd-option .icon { display: none; }
+.dd-suggest .dd-option { justify-content: flex-start; }
+.dd-suggest input[role="combobox"]::-webkit-calendar-picker-indicator { display: none !important; }
+/* compact: the language switch */
+.dd-compact { display: inline-block; }
+.dd-compact .dd-button { width: auto; min-height: 46px; padding: 0 12px 0 16px; border-radius: 99px; font-weight: 600; font-size: .92rem; }
+.dd-compact .dd-list { left: auto; right: 0; min-width: 170px; }
+.settings-card .dd-compact { display: block; }
+.settings-card .dd-compact .dd-button { width: 100%; border-radius: 20px; min-height: 54px; }
+@keyframes ddIn { from { opacity: 0; transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .dd-list { animation: none; } }
+.dd-compact .dd-button { display: inline-flex; }
+.hero-copy .dd-compact { display: block; margin-top: 10px; }
+.dd-compact { width: fit-content; }
+.dd-compact .dd-list { left: 0; right: auto; min-width: max(100%, 170px); }
+.settings-card .dd-compact { width: 100%; }
+.settings-card .dd-compact .dd-list { right: 0; }

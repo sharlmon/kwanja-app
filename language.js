@@ -394,7 +394,7 @@ In Chrome or Edge, look for Install in the address bar or browser menu. In Safar
     document.documentElement.lang = language;
     document.title = text('Kwanja | Tech shop and repair ledger');
     originals.forEach((translate) => translate());
-    document.querySelectorAll('[data-language]').forEach((select) => { select.value = language; });
+    document.querySelectorAll('[data-language]').forEach((select) => { select.value = language; select.dispatchEvent(new CustomEvent('kwanja:sync')); });
   }
 
   function change(next) {

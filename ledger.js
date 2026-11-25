@@ -1744,3 +1744,216 @@ if (pwaEnabled && navigator.onLine && !byId('settings-view') && launchUrl.search
     try { if (localStorage.getItem(onboardedKey)) finishDemo(); } catch { /* storage unavailable */ }
   }
 }
+
+/* Themed dropdowns. A button and listbox replace the browser's native select popup in every browser, and a suggestion list
+   replaces the native datalist. The real <select> stays in the DOM, hidden and kept in sync, so forms and handlers are unchanged. */
+(() => {
+  let uid = 0;
+  let current = null;
+
+  const closeMenu = (restoreFocus = false) => {
+    if (!current) return;
+    const { root, button, list } = current;
+    list.hidden = true;
+    root.classList.remove('open', 'up');
+    button.setAttribute('aria-expanded', 'false');
+    button.removeAttribute('aria-activedescendant');
+    if (restoreFocus) button.focus({ preventScroll: true });
+    current = null;
+  };
+
+  function enhanceSelect(select) {
+    if (select.dataset.dd) return;
+    select.dataset.dd = '1';
+    const id = `dd${++uid}`;
+    const labelText = select.closest('label')?.querySelector(':scope > span')?.textContent?.trim() || select.getAttribute('aria-label') || '';
+    const root = document.createElement('div');
+    root.className = `dd${select.classList.contains('language-choice') ? ' dd-compact' : ''}`;
+    select.before(root);
+    root.append(select);
+    select.classList.add('dd-native');
+    select.tabIndex = -1;
+    select.setAttribute('aria-hidden', 'true');
+
+    const label = document.createElement('span');
+    label.id = `${id}-label`;
+    label.className = 'sr-only';
+    label.textContent = labelText;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'dd-button';
+    button.setAttribute('role', 'combobox');
+    button.setAttribute('aria-haspopup', 'listbox');
+    button.setAttribute('aria-expanded', 'false');
+    button.setAttribute('aria-controls', `${id}-list`);
+    button.setAttribute('aria-labelledby', `${id}-label ${id}-value`);
+    button.innerHTML = `<span class="dd-value" id="${id}-value"></span><svg class="icon dd-chevron" aria-hidden="true"><use href="#i-chevron"/></svg>`;
+    const list = document.createElement('ul');
+    list.className = 'dd-list';
+    list.id = `${id}-list`;
+    list.setAttribute('role', 'listbox');
+    list.tabIndex = -1;
+    list.hidden = true;
+    root.append(label, button, list);
+
+    let active = -1;
+    let typed = '';
+    let typedTimer;
+    const options = () => [...select.options];
+
+    const build = () => {
+      list.replaceChildren(...options().map((option, index) => {
+        const item = document.createElement('li');
+        item.className = 'dd-option';
+        item.id = `${id}-o${index}`;
+        item.setAttribute('role', 'option');
+        item.dataset.index = String(index);
+        if (option.disabled) item.setAttribute('aria-disabled', 'true');
+        if (option.lang) item.lang = option.lang;
+        item.innerHTML = '<span></span><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>';
+        item.firstChild.textContent = option.textContent;
+        return item;
+      }));
+    };
+    const sync = () => {
+      const chosen = select.options[select.selectedIndex];
+      button.querySelector('.dd-value').textContent = chosen ? chosen.textContent : '';
+      root.dataset.empty = String(!chosen || chosen.value === '');
+      button.disabled = select.disabled;
+      [...list.children].forEach((item, index) => item.setAttribute('aria-selected', String(index === select.selectedIndex)));
+    };
+    const setActive = (index) => {
+      const items = [...list.children];
+      if (!items.length) return;
+      active = Math.max(0, Math.min(items.length - 1, index));
+      items.forEach((item, position) => item.classList.toggle('active', position === active));
+      button.setAttribute('aria-activedescendant', items[active].id);
+      items[active].scrollIntoView({ block: 'nearest' });
+    };
+    const open = () => {
+      if (select.disabled || current?.list === list) return;
+      closeMenu();
+      list.hidden = false;
+      const rect = button.getBoundingClientRect();
+      const room = window.innerHeight - rect.bottom;
+      root.classList.toggle('up', room < 240 && rect.top > room);
+      root.classList.add('open');
+      button.setAttribute('aria-expanded', 'true');
+      current = { root, button, list };
+      setActive(select.selectedIndex);
+    };
+    const choose = (index) => {
+      const option = select.options[index];
+      if (!option || option.disabled) return;
+      select.selectedIndex = index;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      sync();
+      closeMenu(true);
+    };
+
+    build();
+    sync();
+    button.addEventListener('click', () => (current?.list === list ? closeMenu() : open()));
+    list.addEventListener('mousedown', (event) => event.preventDefault());
+    list.addEventListener('click', (event) => { const item = event.target.closest('.dd-option'); if (item) choose(Number(item.dataset.index)); });
+    list.addEventListener('mousemove', (event) => { const item = event.target.closest('.dd-option'); if (item && Number(item.dataset.index) !== active) setActive(Number(item.dataset.index)); });
+    button.addEventListener('keydown', (event) => {
+      const isOpen = current?.list === list;
+      const key = event.key;
+      if (key === 'Tab') { closeMenu(); return; }
+      if (key === 'Escape') { if (isOpen) { event.preventDefault(); event.stopPropagation(); closeMenu(true); } return; }
+      if (['ArrowDown', 'ArrowUp', 'Home', 'End', 'Enter', ' '].includes(key)) {
+        event.preventDefault();
+        if (!isOpen) { open(); return; }
+        if (key === 'ArrowDown') setActive(active + 1);
+        else if (key === 'ArrowUp') setActive(active - 1);
+        else if (key === 'Home') setActive(0);
+        else if (key === 'End') setActive(list.children.length - 1);
+        else choose(active);
+        return;
+      }
+      if (key.length === 1 && !event.ctrlKey && !event.metaKey) {
+        typed += key.toLowerCase();
+        clearTimeout(typedTimer);
+        typedTimer = setTimeout(() => { typed = ''; }, 600);
+        const found = options().findIndex((option) => option.textContent.trim().toLowerCase().startsWith(typed));
+        if (found >= 0) { if (!isOpen) open(); setActive(found); }
+      }
+    });
+    select.addEventListener('change', sync);
+    select.addEventListener('kwanja:sync', sync);
+  }
+
+  function enhanceSuggestions(input) {
+    if (input.dataset.dd) return;
+    const source = document.getElementById(input.getAttribute('list'));
+    if (!source) return;
+    input.dataset.dd = '1';
+    const names = [...source.options].map((option) => option.value).filter(Boolean);
+    input.removeAttribute('list');
+    const id = `dd${++uid}`;
+    const root = document.createElement('div');
+    root.className = 'dd dd-suggest';
+    input.before(root);
+    root.append(input);
+    const list = document.createElement('ul');
+    list.className = 'dd-list';
+    list.id = `${id}-list`;
+    list.setAttribute('role', 'listbox');
+    list.hidden = true;
+    root.append(list);
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-expanded', 'false');
+    input.setAttribute('aria-controls', list.id);
+    input.autocomplete = 'off';
+    let active = -1;
+    const hide = () => { list.hidden = true; root.classList.remove('open'); input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); active = -1; };
+    const highlight = (index) => {
+      const items = [...list.children];
+      active = items.length ? (index + items.length) % items.length : -1;
+      items.forEach((item, position) => item.classList.toggle('active', position === active));
+      if (active >= 0) { input.setAttribute('aria-activedescendant', items[active].id); items[active].scrollIntoView({ block: 'nearest' }); }
+    };
+    const show = () => {
+      const query = input.value.trim().toLowerCase();
+      const matches = names.filter((name) => name.toLowerCase().includes(query) && name.toLowerCase() !== query).slice(0, 6);
+      if (!matches.length) { hide(); return; }
+      list.replaceChildren(...matches.map((name, index) => {
+        const item = document.createElement('li');
+        item.className = 'dd-option';
+        item.id = `${id}-o${index}`;
+        item.setAttribute('role', 'option');
+        item.textContent = name;
+        return item;
+      }));
+      list.hidden = false;
+      root.classList.add('open');
+      input.setAttribute('aria-expanded', 'true');
+      active = -1;
+    };
+    const pick = (name) => { input.value = name; input.dispatchEvent(new Event('input', { bubbles: true })); hide(); input.focus({ preventScroll: true }); };
+    input.addEventListener('input', show);
+    input.addEventListener('focus', show);
+    input.addEventListener('blur', () => setTimeout(hide, 120));
+    input.addEventListener('keydown', (event) => {
+      if (list.hidden) { if (event.key === 'ArrowDown') { show(); event.preventDefault(); } return; }
+      if (event.key === 'ArrowDown') { event.preventDefault(); highlight(active + 1); }
+      else if (event.key === 'ArrowUp') { event.preventDefault(); highlight(active - 1); }
+      else if (event.key === 'Enter' && active >= 0) { event.preventDefault(); pick(list.children[active].textContent); }
+      else if (event.key === 'Escape') { event.stopPropagation(); hide(); }
+    });
+    list.addEventListener('mousedown', (event) => event.preventDefault());
+    list.addEventListener('click', (event) => { const item = event.target.closest('.dd-option'); if (item) pick(item.textContent); });
+  }
+
+  const enhance = (root) => {
+    root.querySelectorAll?.('select:not([data-dd])').forEach(enhanceSelect);
+    root.querySelectorAll?.('input[list]:not([data-dd])').forEach(enhanceSuggestions);
+  };
+  enhance(document);
+  new MutationObserver((records) => records.forEach((record) => record.addedNodes.forEach((node) => { if (node.nodeType === 1) enhance(node.matches?.('select, input[list]') ? node.parentNode : node); }))).observe(document.body, { childList: true, subtree: true });
+  document.addEventListener('pointerdown', (event) => { if (current && !current.root.contains(event.target)) closeMenu(); });
+  document.addEventListener('scroll', (event) => { if (current && !current.list.contains(event.target)) closeMenu(); }, true);
+  document.addEventListener('close', (event) => { if (event.target.tagName === 'DIALOG') closeMenu(); }, true);
+})();
