@@ -12,10 +12,10 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <link rel="stylesheet" href="ledger.css?v=ac0d51e05387">
-  <link rel="stylesheet" href="public.css?v=92d19f8ce79e">
+  <link rel="stylesheet" href="ledger.css?v=de64b93d5844">
+  <link rel="stylesheet" href="public.css?v=17e0b2728832">
   <script src="config.js?v=e29e0d7d06cd"></script>
-  <script src="ledger.js?v=f5bed6759471" defer></script>
+  <script src="ledger.js?v=6610d82b6e69" defer></script>
 </head>
 <body class="is-welcome">
   <svg xmlns="http://www.w3.org/2000/svg" class="icon-library" aria-hidden="true">
@@ -53,14 +53,20 @@
       <div id="overview-view">
         <h1 class="sr-only" id="page-title">Overview</h1>
         <p class="sr-only" id="page-context"></p>
-        <section class="balance" aria-label="Ledger summary">
-          <p class="balance-label"><span class="lime-dot"></span>Net outstanding<svg class="icon"><use href="#i-chevron"/></svg></p>
-          <p class="balance-figure"><span>KES</span><span id="net-amount"></span></p>
-          <p class="chip" id="overdue-chip"></p>
-          <div class="duo">
-            <a class="duo-pill" href="#ledger/receivable"><span class="duo-label"><svg class="icon"><use href="#i-in"/></svg>Owed to you</span><strong id="receivable-total"></strong><small id="receivable-count"></small></a>
-            <a class="duo-pill" href="#ledger/payable"><span class="duo-label"><svg class="icon"><use href="#i-out"/></svg>You owe</span><strong id="payable-total"></strong><small id="payable-count"></small></a>
-          </div>
+        <section class="wallets" aria-label="Ledger balances">
+          <a class="wallet-card wallet-in" href="#ledger/receivable">
+            <span class="wallet-label"><span class="wallet-icon"><svg class="icon" aria-hidden="true"><use href="#i-in"/></svg></span>Owed to you</span>
+            <strong class="wallet-value"><small>KES</small> <span id="receivable-total"></span></strong>
+            <span class="wallet-footer"><span id="receivable-count"></span><span class="wallet-overdue" id="overdue-chip" hidden></span></span>
+            <span class="wallet-arrow"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></span>
+          </a>
+          <a class="wallet-card wallet-out" href="#ledger/payable">
+            <span class="wallet-label"><span class="wallet-icon"><svg class="icon" aria-hidden="true"><use href="#i-out"/></svg></span>You owe</span>
+            <strong class="wallet-value"><small>KES</small> <span id="payable-total"></span></strong>
+            <span class="wallet-footer" id="payable-count"></span>
+            <span class="wallet-arrow"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></span>
+          </a>
+          <p class="wallet-net"><span>Net outstanding</span><strong id="net-amount"></strong></p>
         </section>
 
         <section class="banner" id="banner" aria-live="polite"></section>
@@ -134,10 +140,13 @@
             <button class="pill public-install" type="button" data-action="install-app" hidden><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>Install Kwanja</button>
             <button class="public-demo link" type="button" data-action="skip" hidden>Explore the demo ledger</button>
           </div>
-          <figure class="sample" aria-label="Example ledger showing what customers still owe">
+          <figure class="sample" aria-label="Example ledger showing customer and supplier balances">
             <span class="coin" aria-hidden="true"><svg class="icon"><use href="#i-whatsapp"/></svg></span>
             <div class="sample-top"><span><svg class="icon" aria-hidden="true"><use href="#i-ledger"/></svg>Westlands Device Repair</span><span class="chip">Sample ledger</span></div>
-            <div class="sample-balance"><span>Owed to you</span><strong><small>KES</small> 31,600</strong></div>
+            <div class="sample-wallets">
+              <div class="wallet-card wallet-in"><span class="wallet-label"><svg class="icon" aria-hidden="true"><use href="#i-in"/></svg>Owed to you</span><strong class="wallet-value"><small>KES</small> 31,600</strong></div>
+              <div class="wallet-card wallet-out"><span class="wallet-label"><svg class="icon" aria-hidden="true"><use href="#i-out"/></svg>You owe</span><strong class="wallet-value"><small>KES</small> 18,400</strong></div>
+            </div>
             <div class="sample-row"><span class="contact-avatar avatar-0" aria-hidden="true">AM</span><div><b>Amina Mwangi</b><small>Laptop screen replacement · deposit paid</small></div><div><b class="plus">+KES 6,200</b><small class="late">Overdue</small></div></div>
             <div class="sample-row"><span class="contact-avatar avatar-3" aria-hidden="true">MI</span><div><b>Metro IT Services</b><small>Refurbished laptop sale on credit</small></div><div><b class="plus">+KES 25,400</b><small>Due 2 Dec</small></div></div>
             <figcaption><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg>Review a reminder before sending it on WhatsApp</figcaption>

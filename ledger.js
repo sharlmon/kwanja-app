@@ -262,10 +262,12 @@ function renderOverview() {
   const today = localDate();
   const queue = workshopLedger ? followUpQueue(receivable, today) : overdue;
 
-  byId('net-amount').textContent = formatAmount(receiveTotal - payTotal);
-  byId('overdue-chip').innerHTML = overdueTotal ? `Overdue <b>${money(overdueTotal)}</b>` : 'Nothing <b>overdue</b>';
-  byId('receivable-total').textContent = money(receiveTotal);
-  byId('payable-total').textContent = money(payTotal);
+  byId('net-amount').textContent = money(receiveTotal - payTotal);
+  const overdueChip = byId('overdue-chip');
+  overdueChip.hidden = !overdueTotal;
+  overdueChip.innerHTML = overdueTotal ? `<b>${money(overdueTotal)}</b> overdue` : '';
+  byId('receivable-total').textContent = formatAmount(receiveTotal);
+  byId('payable-total').textContent = formatAmount(payTotal);
   byId('receivable-count').textContent = plural(receivable.length, 'open debt');
   byId('payable-count').textContent = plural(payable.length, 'open bill');
 
