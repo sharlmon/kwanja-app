@@ -1217,11 +1217,17 @@ async function startClerk(key) {
   await Promise.all([sdk, ui]);
   clerk = window.Clerk;
   const ClerkUI = window.__internal_ClerkUICtor;
-  await clerk.load(ClerkUI ? { ui: { ClerkUI } } : undefined);
+  await clerk.load({ afterSignOutUrl: signOutUrl().href, ...(ClerkUI ? { ui: { ClerkUI } } : {}) });
 }
 
 function oauthUrl() {
   return new URL(location.pathname, location.origin);
+}
+
+function signOutUrl() {
+  const destination = oauthUrl();
+  destination.hash = '#home';
+  return destination;
 }
 
 async function completeOAuth() {
@@ -1296,8 +1302,9 @@ async function afterSignIn() {
 }
 
 async function leaveSession({ expired = false } = {}) {
+  const destination = signOutUrl().href;
   try {
-    await clerk?.signOut();
+    await clerk?.signOut({ redirectUrl: destination });
   } catch {
     if (!expired) {
       notify('Could not sign out. Check your connection and try again.');
@@ -1306,8 +1313,11 @@ async function leaveSession({ expired = false } = {}) {
   }
   entries = [];
   apiReady = false;
+  if (dialog.open) dialog.close();
   byId('search').value = '';
-  history.replaceState(null, '', '#home');
+  byId('connection-status').hidden = true;
+  updateOfflineStatus();
+  history.replaceState(null, '', destination);
   render();
   openWelcome('intro');
   if (expired) notify('Your session has ended. Log in again.');
