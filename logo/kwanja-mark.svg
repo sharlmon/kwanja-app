@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Kwanja mark</title>
+  <rect x=".5" y=".5" width="63" height="63" rx="15" fill="#192019" stroke="#394838"/>
+  <path fill="#F0F1E7" d="M15 15h8v34h-8zM27 31l17-16h10L33 35z"/>
+  <path fill="#D9ECAF" d="M27 33l6-6 21 22H43z"/>
+</svg>

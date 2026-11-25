@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0f0c">
+  <title>Kwanja | Business ledger</title>
+  <meta name="description" content="Track what customers owe you and what you owe suppliers.">
+  <link rel="icon" href="logo/kwanja-mark.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="ledger.css">
+  <script src="config.js"></script>
+  <script src="ledger.js" defer></script>
+</head>
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" class="icon-library" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-5.5H9v5.5H5.5A1.5 1.5 0 0 1 4 19z"/></symbol>
+    <symbol id="i-ledger" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M9 8h6m-6 4h6m-6 4h3"/></symbol>
+    <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2m2-15a3 3 0 0 1 0 6m4 9v-2a4 4 0 0 0-3-3.9"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+    <symbol id="i-in" viewBox="0 0 24 24"><path d="m17 7-10 10M7 9v8h8"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="15" rx="2"/><path d="M8 3v6m8-6v6M4 11h16"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-11 6.6L4 20l1.8-4.7A7.5 7.5 0 1 1 20 11.5Z"/><path d="M9 11.5h6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.8"/></symbol>
+    <symbol id="i-eyeoff" viewBox="0 0 24 24"><path d="M4 4l16 16M9.9 5.8A9 9 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a16 16 0 0 1-3.2 3.9M6.3 7.6A16 16 0 0 0 2.5 12S6 18.5 12 18.5a9 9 0 0 0 3.6-.8"/><path d="M10 10a2.8 2.8 0 0 0 4 4"/></symbol>
+      <symbol id="i-back" viewBox="0 0 24 24"><path d="M9 6h10a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 18H9l-5.5-6z"/><path d="m12.5 9.5 5 5m0-5-5 5"/></symbol>
+  </svg>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="shell">
+    <main id="main" class="main" tabindex="-1">
+      <header class="topbar">
+        <a class="brand" href="#overview" aria-label="Kwanja overview"><img src="logo/kwanja-wordmark.svg" alt="Kwanja"></a>
+        <span class="spacer"></span>
+        <button class="round privacy" type="button" data-action="privacy" aria-pressed="false" aria-label="Hide amounts"><svg class="icon"><use href="#i-eye"/></svg></button>
+        <button class="pill-dark" type="button" data-action="export"><svg class="icon"><use href="#i-download"/></svg>Export</button>
+      </header>
+
+      <div id="connection-status" class="connection-status" role="status" hidden></div>
+
+      <div id="overview-view">
+        <h1 class="sr-only" id="page-title">Overview</h1>
+        <p class="sr-only" id="page-context"></p>
+        <section class="balance" aria-label="Ledger summary">
+          <p class="balance-label"><span class="lime-dot"></span>Net outstanding<svg class="icon"><use href="#i-chevron"/></svg></p>
+          <p class="balance-figure"><span>KES</span><span id="net-amount"></span></p>
+          <p class="chip" id="overdue-chip"></p>
+          <div class="duo">
+            <a class="duo-pill" href="#ledger/receivable"><span class="duo-label"><svg class="icon"><use href="#i-in"/></svg>Owed to you</span><strong id="receivable-total"></strong><small id="receivable-count"></small></a>
+            <a class="duo-pill" href="#ledger/payable"><span class="duo-label"><svg class="icon"><use href="#i-out"/></svg>You owe</span><strong id="payable-total"></strong><small id="payable-count"></small></a>
+          </div>
+        </section>
+
+        <section class="banner" id="banner" aria-live="polite"></section>
+
+        <section class="card" aria-labelledby="chase-title">
+          <div class="card-head"><h2 id="chase-title">Follow up</h2><button class="mini" type="button" data-action="new"><svg class="icon"><use href="#i-plus"/></svg>Add</button></div>
+          <div id="follow-list" class="chase-row"></div>
+        </section>
+
+        <section class="card" aria-labelledby="recent-title">
+          <div class="card-head"><h2 id="recent-title">Recent entries</h2><a class="more" href="#ledger">see more</a></div>
+          <div id="recent-list" class="list"></div>
+        </section>
+      </div>
+
+      <section id="ledger-view" aria-label="Ledger entries" hidden>
+        <h1 class="view-title">Ledger</h1>
+        <label class="search"><svg class="icon"><use href="#i-search"/></svg><input id="search" type="search" placeholder="Search ledger" aria-label="Search ledger"></label>
+        <div id="filters" class="filters" aria-label="Filter entries">
+          <a href="#ledger" data-filter="all">All</a>
+          <a href="#ledger/receivable" data-filter="receivable">Owed to you</a>
+          <a href="#ledger/payable" data-filter="payable">You owe</a>
+          <a href="#ledger/paid" data-filter="paid">Settled</a>
+        </div>
+        <div id="ledger-list" class="cards"></div>
+      </section>
+
+      <section id="contacts-view" aria-label="Contacts" hidden><h1 class="view-title">Contacts</h1><div id="contacts-list"></div>
+        <div id="account" class="contact-group account" hidden><h2>Account</h2><p class="help" id="account-email"></p><button class="button" type="button" data-action="signout">Sign out</button></div></section>
+    </main>
+
+    <nav class="dock" aria-label="Workspace">
+      <a href="#overview" data-nav="overview" aria-label="Overview"><svg class="icon"><use href="#i-home"/></svg></a>
+      <a href="#ledger" data-nav="ledger" aria-label="Ledger"><svg class="icon"><use href="#i-ledger"/></svg></a>
+      <button class="fab" type="button" data-action="new" aria-label="Add debt"><svg class="icon"><use href="#i-plus"/></svg></button>
+      <a href="#contacts" data-nav="contacts" aria-label="Contacts"><svg class="icon"><use href="#i-people"/></svg></a>
+      <button class="dock-export" type="button" data-action="export" aria-label="Export ledger"><svg class="icon"><use href="#i-download"/></svg></button>
+    </nav>
+  </div>
+
+  <section id="welcome" class="welcome" aria-label="Welcome to Kwanja" hidden>
+    <div class="w-step" data-step="intro">
+      <div class="w-art" aria-hidden="true">
+        <div class="w-card c3"><b>Baraka Wholesalers</b><span>KES 18,400</span></div>
+        <div class="w-card c2"><b>Kamau Hardware</b><span>KES 28,400</span></div>
+        <div class="w-card c1"><b>Mama Njeri</b><span>KES 6,200</span><i>Overdue</i></div>
+        <span class="coin"><svg class="icon"><use href="#i-chat"/></svg></span>
+      </div>
+      <h1 tabindex="-1">Get paid what you are owed.</h1>
+      <p class="w-sub">Keep every debt in one place. Remind customers on WhatsApp and record M-Pesa payments in seconds.</p>
+      <div class="w-actions">
+        <button class="button primary" type="button" data-action="start">Create account</button>
+        <p class="w-login">Have an account? <button type="button" class="link" data-action="login">Log in</button></p>
+        <button type="button" class="link subtle" data-action="skip">Explore the demo workspace</button>
+      </div>
+    </div>
+    <div class="w-step" data-step="email" hidden>
+      <button class="round" type="button" data-action="welcome-back" data-to="intro" aria-label="Back"><svg class="icon" style="transform:rotate(180deg)"><use href="#i-chevron"/></svg></button>
+      <h1 tabindex="-1">What is your email?</h1>
+      <p class="w-sub">We will send you a 6-digit code. No password to remember.</p>
+      <form class="form" novalidate>
+        <label class="field"><span>Email</span><input name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@business.co.ke" required></label>
+        <p class="form-error" role="alert" hidden></p>
+        <button class="button primary" type="submit">Send code</button>
+      </form>
+    </div>
+    <div class="w-step" data-step="code" hidden>
+      <button class="round" type="button" data-action="welcome-back" data-to="email" aria-label="Back"><svg class="icon" style="transform:rotate(180deg)"><use href="#i-chevron"/></svg></button>
+      <h1 tabindex="-1">Enter your code</h1>
+      <p class="w-sub">Sent to <b id="otp-email"></b>. <span class="demo-only">This is a demo, so any 6 digits work.</span></p>
+      <div id="otp-slots" class="otp" role="img"></div>
+      <p class="form-error" role="alert" hidden></p>
+      <div class="numpad">
+        <button type="button" data-action="otp" data-key="1">1</button><button type="button" data-action="otp" data-key="2">2</button><button type="button" data-action="otp" data-key="3">3</button>
+        <button type="button" data-action="otp" data-key="4">4</button><button type="button" data-action="otp" data-key="5">5</button><button type="button" data-action="otp" data-key="6">6</button>
+        <button type="button" data-action="otp" data-key="7">7</button><button type="button" data-action="otp" data-key="8">8</button><button type="button" data-action="otp" data-key="9">9</button>
+        <span></span><button type="button" data-action="otp" data-key="0">0</button><button type="button" data-action="otp" data-key="del" aria-label="Delete last digit"><svg class="icon"><use href="#i-back"/></svg></button>
+      </div>
+      <button type="button" class="link subtle resend" data-action="resend">Did not get it? Send a new code</button>
+    </div>
+    <div class="w-step" data-step="business" hidden>
+      <h1 tabindex="-1">Name your business.</h1>
+      <p class="w-sub">This is how your ledger and customer reminders will read. You can change it later.</p>
+      <form class="form" novalidate>
+        <label class="field"><span>Business name</span><input name="business" maxlength="100" autocomplete="organization" placeholder="e.g. Wanjiru Traders" required></label>
+        <p class="form-error" role="alert" hidden></p>
+        <button class="button primary" type="submit">Create my ledger</button>
+      </form>
+    </div>
+  </section>
+
+  <dialog id="dialog" aria-labelledby="dialog-title">
+    <div class="dialog-heading"><h2 id="dialog-title" tabindex="-1"></h2><button type="button" class="icon-button" data-action="close" aria-label="Close dialog"><svg class="icon"><use href="#i-close"/></svg></button></div>
+    <div id="dialog-content"></div>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

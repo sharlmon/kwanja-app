@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Kwanja">
+  <title>Kwanja</title>
+  <rect width="128" height="128" rx="30" fill="#0F6B3E"/>
+  <g fill="none" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M44 26V102" stroke="#FBF7EE"/>
+    <path d="M44 78L63 97L94 46" stroke="#F5B71F"/>
+  </g>
+</svg>

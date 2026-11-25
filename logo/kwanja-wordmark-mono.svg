@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 428 148" role="img" aria-label="kwanja" color="#1B211C">
+  <title>kwanja</title>
+  <g fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 0V100M6 70L26 90L54 42"/>
+    <path d="M82 40L98 100L113 54L128 100L144 40"/>
+    <circle cx="198" cy="70" r="30"/><path d="M228 40V100"/>
+    <path d="M252 40V100M252 68C252 48 266 40 278 40C292 40 298 52 298 66V100"/>
+    <path d="M324 40V108Q324 128 306 128"/>
+    <circle cx="378" cy="70" r="30"/><path d="M408 40V100"/>
+  </g>
+  <circle cx="324" cy="10" r="10" fill="currentColor"/>
+</svg>
