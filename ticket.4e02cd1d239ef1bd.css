@@ -292,7 +292,7 @@ button.ticket:active { transform: translateY(1px); }
 .bench-band { margin-block: clamp(28px, 5vw, 64px); }
 .bench { position: relative; margin: 0; overflow: hidden; border-radius: 14px; border: 1px solid var(--ink); background: var(--ink); }
 .bench img { display: block; width: 100%; height: clamp(440px, 62vw, 680px); object-fit: cover; object-position: 50% 58%; }
-.bench::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(22, 21, 19, .9) 0%, rgba(22, 21, 19, .62) 36%, rgba(22, 21, 19, 0) 66%); pointer-events: none; }
+.bench::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(22, 21, 19, .94) 0%, rgba(22, 21, 19, .82) 40%, rgba(22, 21, 19, .3) 70%, rgba(22, 21, 19, 0) 92%); pointer-events: none; }
 @media (max-width: 860px) { .bench::after { background: linear-gradient(180deg, rgba(22, 21, 19, 0) 25%, rgba(22, 21, 19, .9) 80%); } }
 .bench-copy { position: absolute; z-index: 1; left: clamp(18px, 4vw, 48px); right: clamp(18px, 4vw, 48px); bottom: clamp(36px, 5vw, 56px); max-width: 520px; display: grid; gap: 12px; justify-items: start; color: #fff; }
 .bench-copy h2 { max-width: 16ch; font-size: clamp(1.8rem, 4.6vw, 3.4rem); color: #fff; }
@@ -303,7 +303,7 @@ button.ticket:active { transform: translateY(1px); }
 
 /* sign-in panel: the technicians, printed faintly behind the pitch */
 .auth-side { position: relative; isolation: isolate; }
-.auth-side::before { content: ""; position: absolute; inset: 0; z-index: -1; background: url("photos/technicians-soldering.jpg") 40% 50% / cover no-repeat; filter: grayscale(1) contrast(1.05); opacity: .3; mix-blend-mode: multiply; }
+.auth-side::before { content: ""; position: absolute; inset: 0; z-index: -1; background: url("photos/electronics-mall-atrium.jpg") 50% 40% / cover no-repeat; filter: grayscale(1) contrast(1.05); opacity: .3; mix-blend-mode: multiply; }
 .auth-photo-credit { margin: 0; order: 3; font-size: .7rem; color: var(--ink2); }
 .auth-photo-credit a { text-decoration: underline; text-underline-offset: 2px; }
 .anatomy-photo img, .how-photo img, .photo-band img, .bench img { height: auto; }
@@ -371,3 +371,11 @@ button.ticket:active { transform: translateY(1px); }
 /* about panel: calmer, aligned to the same grid */
 .about-copy { display: grid; gap: 14px; }
 .about-copy p { color: #d9d6cb; }
+
+/* new photo crops */
+.photo-band img { object-position: 50% 62%; }
+.how-photo img { object-position: 50% 35%; }
+.bench img { object-position: 50% 50%; }
+.about-photo img { object-position: 50% 30%; }
+
+.bench img { filter: brightness(.9) saturate(.95); }

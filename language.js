@@ -10,8 +10,8 @@ A burnt power chip on the board, a deposit at the counter, a balance at pickup. 
 Brought in. Fault found at the bench. KES 1,000 deposit taken. => Imeletwa. Hitilafu imepatikana mezani. Malipo ya awali ya KES 1,000 yamepokelewa.
 Part replaced. The customer gets a WhatsApp message. => Kipuri kimebadilishwa. Mteja anapata ujumbe wa WhatsApp.
 Picked up. KES 2,500 balance paid by M-Pesa. Ticket settled. => Amechukua kifaa. Salio la KES 2,500 limelipwa kwa M-Pesa. Tiketi imekamilika.
-A bench full of screens. Who has paid? => Meza iliyojaa skrini. Nani ameshalipa?
-Every job gets a ticket with its deposit and balance, so the pile on the bench is not also the pile in your head. => Kila kazi ina tiketi yenye malipo ya awali na salio, kwa hivyo rundo mezani si rundo kichwani pia.
+A shop full of stock. Who has paid? => Duka lililojaa bidhaa. Nani ameshalipa?
+Every sale on credit gets a ticket with its deposit and balance, so the stock that left the shelf is not also the debt you forget. => Kila mauzo ya mkopo yana tiketi yenye malipo ya awali na salio, kwa hivyo bidhaa iliyotoka rafuni si deni utakalosahau.
 Charred power chip => Chipu ya umeme iliyoungua
 Getting started => Kuanza
 Add a job or sale => Ongeza kazi au mauzo
