@@ -42,6 +42,14 @@ body.is-welcome .shell { display: none; }
 .lede { margin-top: 22px; max-width: 44ch; color: var(--muted); font-size: clamp(1.04rem, 1.7vw, 1.2rem); line-height: 1.5; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
 .public-demo { margin-top: 14px; }
+.public-install {
+  position: fixed; z-index: 20;
+  right: max(calc(14px + env(safe-area-inset-right)), calc(50% - 560px));
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  padding: 0 16px; border: 1px solid rgba(13, 13, 14, .16);
+  background: var(--lime); color: var(--lime-ink); box-shadow: 0 4px 16px rgba(13, 13, 14, .16);
+}
+.public-install:hover { background: var(--lime-soft); }
 
 .sample { position: relative; margin: 0; padding: 20px; border-radius: 32px; background: var(--card); box-shadow: var(--soft), 0 40px 60px -40px rgba(20, 20, 30, .45); }
 .sample .coin { position: absolute; top: -26px; right: 22px; width: 66px; height: 66px; animation: bob 3.6s ease-in-out infinite; }
@@ -94,6 +102,7 @@ body.is-welcome .shell { display: none; }
 .public-cta .pill.primary { flex: none; }
 
 .public-footer { padding: 8px 0 36px; }
+.public-site:has(.public-install:not([hidden])) .public-footer { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
 .public-footer .public-width { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--muted); }
 .public-footer .brand { margin-right: auto; }
 .public-footer .brand img { display: block; height: 26px; width: auto; }
