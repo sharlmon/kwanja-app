@@ -310,6 +310,7 @@ function render() {
   });
   byId('account').hidden = authMode !== 'clerk' || !clerk?.user;
   if (!byId('account').hidden) byId('account-email').textContent = clerk.user.primaryEmailAddress?.emailAddress || '';
+  byId('account').querySelector('[data-action="account-security"]').hidden = !passwordAuthEnabled();
   byId('page-title').textContent = pageTitles[page];
   byId('page-context').textContent = page === 'overview' && authMode !== 'clerk' ? `${businessName} · Demo workspace` : businessName;
   if (page === 'overview') renderOverview();
@@ -589,6 +590,7 @@ const welcome = byId('welcome');
 const publicHashes = new Set(['#home', '#welcome', '#how-it-works', '#about', '#questions']);
 const oauthCallback = new URLSearchParams(location.search).has('clerk_oauth');
 let authIntent = 'signup';
+let loginMethod = 'password';
 let challenge = null;
 let pendingEmail = '';
 let configuredProviders = [];
@@ -646,16 +648,34 @@ function stepError(step, message) {
   error.hidden = !message;
 }
 
+function passwordAuthEnabled() {
+  return authMode === 'clerk' && window.KWANJA_PASSWORD_AUTH === true;
+}
+
 function updateEmailScreen() {
   const login = authIntent === 'login';
+  const passwords = passwordAuthEnabled();
+  const passwordLogin = login && passwords && loginMethod === 'password';
   byId('auth-heading').textContent = login ? 'Log in to Kwanja' : 'Create your account';
-  byId('auth-description').textContent = login ? 'Use your account email to get a fresh sign-in code.' : 'We’ll send a six-digit code to verify your email.';
+  byId('auth-description').textContent = passwordLogin ? 'Enter your email and password.'
+    : login ? 'Use your account email to get a fresh sign-in code.' : 'We’ll send a six-digit code to verify your email.';
   byId('auth-switch-copy').textContent = login ? 'New to Kwanja?' : 'Already have an account?';
   const link = byId('auth-switch-link');
   link.href = login ? '#signup' : '#login';
   link.textContent = login ? 'Create account' : 'Log in';
   const form = welcome.querySelector('[data-form="email"]');
-  form.querySelector('[type="submit"]').disabled = ['pending', 'unavailable'].includes(authMode);
+  const submit = form.querySelector('[type="submit"]');
+  submit.disabled = ['pending', 'unavailable'].includes(authMode);
+  submit.textContent = passwordLogin ? 'Log in' : 'Send code';
+  const password = form.elements.password;
+  byId('auth-password-field').hidden = !passwordLogin;
+  password.disabled = !passwordLogin;
+  password.required = passwordLogin;
+  password.value = '';
+  byId('password-options').hidden = !login || !passwords;
+  byId('password-options').querySelector('[data-action="switch-login-method"]').textContent =
+    passwordLogin ? 'Use an email code' : 'Use a password';
+  byId('password-options').querySelector('[data-action="password-recovery"]').hidden = !passwordLogin;
   const providers = byId('auth-providers');
   providers.hidden = authMode !== 'clerk' || !configuredProviders.length;
   providers.querySelectorAll('[data-provider]').forEach((button) => { button.hidden = !configuredProviders.includes(button.dataset.provider); });
@@ -667,6 +687,7 @@ function publicRoute(focus = true) {
   if (hash === '#signup' || hash === '#login') {
     if (authMode === 'clerk' && clerk?.session) return afterSignIn();
     authIntent = hash === '#login' ? 'login' : 'signup';
+    loginMethod = 'password';
     challenge = null;
     updateEmailScreen();
     return openWelcome('email', focus);
@@ -798,8 +819,10 @@ async function leaveSession({ expired = false } = {}) {
   if (expired) notify('Your session has ended. Log in again.');
 }
 
-async function sendCode({ resource, emailAddressId }) {
-  if (emailAddressId) {
+async function sendCode({ resource, emailAddressId, secondFactor }) {
+  if (secondFactor) {
+    await resource.prepareSecondFactor({ strategy: 'email_code', emailAddressId });
+  } else if (emailAddressId) {
     await resource.prepareFirstFactorVerification({ strategy: 'email_code', emailAddressId });
   } else {
     await resource.prepareEmailAddressVerification({ strategy: 'email_code' });
@@ -818,6 +841,42 @@ async function beginEmail(email, intent) {
   }
   await sendCode(nextChallenge);
   return nextChallenge;
+}
+
+function openClerkSignIn(email) {
+  const destination = oauthUrl();
+  destination.hash = '#overview';
+  clerk.openSignIn({ forceRedirectUrl: destination.href, initialValues: { emailAddress: email } });
+}
+
+function showCodeStep(email, nextChallenge) {
+  challenge = nextChallenge;
+  pendingEmail = email;
+  byId('otp-email').textContent = email;
+  byId('auth-code-heading').textContent = challenge?.secondFactor ? 'Verify this sign-in' : 'Check your email';
+  welcome.querySelector('[name="code"]').value = '';
+  stepError('code', '');
+  markCodeSent();
+  showStep('code');
+}
+
+async function loginWithPassword(email, password, stillOnForm) {
+  const resource = await clerk.client.signIn.create({ identifier: email, password });
+  if (!stillOnForm()) return;
+  if (resource.status === 'complete') {
+    await activateSession(resource);
+    return;
+  }
+  if (resource.status === 'needs_second_factor') {
+    const factor = resource.supportedSecondFactors?.find((item) => item.strategy === 'email_code');
+    if (factor?.emailAddressId) {
+      const nextChallenge = { resource, emailAddressId: factor.emailAddressId, secondFactor: true };
+      await sendCode(nextChallenge);
+      if (stillOnForm()) showCodeStep(email, nextChallenge);
+      return;
+    }
+  }
+  openClerkSignIn(email);
 }
 
 function renderResend() {
@@ -850,10 +909,15 @@ async function resendCode(button) {
 }
 
 async function verifyCode(code) {
-  const { resource, emailAddressId } = challenge;
-  const result = emailAddressId
-    ? await resource.attemptFirstFactorVerification({ strategy: 'email_code', code })
-    : await resource.attemptEmailAddressVerification({ code });
+  const { resource, emailAddressId, secondFactor } = challenge;
+  let result;
+  if (secondFactor) {
+    result = await resource.attemptSecondFactor({ strategy: 'email_code', code });
+  } else if (emailAddressId) {
+    result = await resource.attemptFirstFactorVerification({ strategy: 'email_code', code });
+  } else {
+    result = await resource.attemptEmailAddressVerification({ code });
+  }
   if (result.status !== 'complete') {
     if (result.missingFields?.includes('protect_check') && clerk.redirectToSignUp) {
       const destination = oauthUrl();
@@ -863,8 +927,19 @@ async function verifyCode(code) {
     }
     throw new Error('Could not finish logging in. Try again.');
   }
+  await activateSession(result);
+}
+
+async function activateSession(result) {
+  if (!result.createdSessionId) throw new Error('Could not finish logging in. Try again.');
   await clerk.setActive({ session: result.createdSessionId });
   await afterSignIn();
+}
+
+async function openNewLedger() {
+  hideWelcome();
+  await loadApiLedger();
+  if (apiReady) notify('Your ledger is ready.');
 }
 
 Object.assign(clickActions, {
@@ -872,6 +947,13 @@ Object.assign(clickActions, {
   'retry-auth': afterSignIn,
   signout: () => leaveSession(),
   provider: startOAuth,
+  'account-security': () => clerk.openUserProfile(),
+  'open-ledger': openNewLedger,
+  'switch-login-method': () => {
+    loginMethod = loginMethod === 'password' ? 'code' : 'password';
+    updateEmailScreen();
+  },
+  'password-recovery': () => openClerkSignIn(welcome.querySelector('[data-form="email"]').elements.email.value.trim()),
   'change-email': () => {
     challenge = null;
     welcome.querySelector('[data-form="email"] [name="email"]').value = pendingEmail;
@@ -894,15 +976,15 @@ welcome.addEventListener('submit', async (event) => {
     if (step === 'email') {
       const email = values.email.trim();
       const screen = location.hash;
-      const requestedCode = authMode === 'clerk' ? await beginEmail(email, authIntent) : null;
-      if (screen !== location.hash || form.closest('[data-step]').hidden) return;
-      challenge = requestedCode;
-      pendingEmail = email;
-      byId('otp-email').textContent = email;
-      welcome.querySelector('[name="code"]').value = '';
-      stepError('code', '');
-      markCodeSent();
-      showStep('code');
+      const method = loginMethod;
+      const stillOnForm = () => screen === location.hash && method === loginMethod && !form.closest('[data-step]').hidden;
+      form.elements.password.value = '';
+      if (passwordAuthEnabled() && authIntent === 'login' && method === 'password') {
+        await loginWithPassword(email, values.password, stillOnForm);
+      } else {
+        const requestedCode = authMode === 'clerk' ? await beginEmail(email, authIntent) : null;
+        if (stillOnForm()) showCodeStep(email, requestedCode);
+      }
     } else if (step === 'code') {
       if (authMode === 'clerk') await verifyCode(values.code);
       else await finishDemo();
@@ -910,9 +992,8 @@ welcome.addEventListener('submit', async (event) => {
       const name = values.business.trim();
       if (!name) throw new Error('Enter your business name.');
       await api('/business', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
-      hideWelcome();
-      await loadApiLedger();
-      notify('Your ledger is ready.');
+      if (passwordAuthEnabled() && !clerk.user?.passwordEnabled) showStep('password-setup');
+      else await openNewLedger();
     }
   } catch (error) {
     stepError(step, authMessage(error));

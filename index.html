@@ -14,8 +14,8 @@
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="stylesheet" href="ledger.css">
   <link rel="stylesheet" href="public.css">
-  <script src="config.js"></script>
-  <script src="ledger.js" defer></script>
+  <script src="config.js?v=1c8a15befd3f"></script>
+  <script src="ledger.js?v=02f79037e1d9" defer></script>
 </head>
 <body class="is-welcome">
   <svg xmlns="http://www.w3.org/2000/svg" class="icon-library" aria-hidden="true">
@@ -90,7 +90,7 @@
       </section>
 
       <section id="contacts-view" aria-label="Contacts" hidden><h1 class="view-title">Contacts</h1><p class="view-sub" id="contacts-sub"></p><div id="contacts-list"></div>
-        <div id="account" class="contact-group account" hidden><h2>Account</h2><p class="help" id="account-email"></p><button class="button" type="button" data-action="signout">Sign out</button></div></section>
+        <div id="account" class="contact-group account" hidden><h2>Account</h2><p class="help" id="account-email"></p><button class="button" type="button" data-action="account-security" hidden>Manage password</button><button class="button" type="button" data-action="signout">Sign out</button></div></section>
     </main>
 
     <nav class="dock" aria-label="Workspace">
@@ -182,14 +182,16 @@
             </div>
             <form class="auth-form" data-form="email">
               <label class="field"><span>Email address</span><input name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@business.co.ke" required></label>
+              <label class="field" id="auth-password-field" hidden><span>Password</span><input name="password" type="password" autocomplete="current-password" disabled></label>
               <p class="form-error" role="alert" hidden></p>
               <button class="pill primary large block" type="submit">Send code</button>
             </form>
+            <div class="auth-code-actions" id="password-options" hidden><button class="link" type="button" data-action="switch-login-method">Use an email code</button><button class="link" type="button" data-action="password-recovery">Forgot password?</button></div>
             <p class="auth-switch"><span id="auth-switch-copy">Already have an account?</span> <a class="link" id="auth-switch-link" href="#login">Log in</a></p>
             <p class="demo-only auth-demo-note">Demo mode. No email is sent and any six digits work.</p>
           </div>
           <div class="w-step" data-step="code" hidden>
-            <h1 tabindex="-1">Check your email</h1>
+            <h1 tabindex="-1" id="auth-code-heading">Check your email</h1>
             <p class="w-sub">Enter the six-digit code sent to <b id="otp-email"></b>. <span class="demo-only">For the demo, enter any six digits.</span></p>
             <form class="auth-form" data-form="code">
               <label class="field"><span>Verification code</span><input class="code-input" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000" required></label>
@@ -206,6 +208,12 @@
               <p class="form-error" role="alert" hidden></p>
               <button class="pill primary large block" type="submit">Create my ledger</button>
             </form>
+          </div>
+          <div class="w-step" data-step="password-setup" hidden>
+            <h1 tabindex="-1">Add a password</h1>
+            <p class="w-sub">Use a password for future logins, or keep using email codes. To set one, open your account and choose Security.</p>
+            <button class="pill primary large block" type="button" data-action="account-security">Open account settings</button>
+            <p class="auth-switch"><button class="link" type="button" data-action="open-ledger">Continue to my ledger</button></p>
           </div>
           <div class="w-step" data-step="callback" hidden><h1 tabindex="-1">Finishing sign-in</h1><p class="w-sub">One moment while we finish signing you in.</p><p class="form-error" role="alert" hidden></p></div>
         </div>
