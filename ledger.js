@@ -641,7 +641,7 @@ async function startClerk(key) {
       script.async = true;
       script.crossOrigin = 'anonymous';
       script.dataset.clerkPublishableKey = key;
-      script.src = `https://${domain}/npm/@clerk/clerk-js@5/dist/clerk.browser.js`;
+      script.src = `https://${domain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`;
       script.onload = resolve;
       script.onerror = () => reject(new Error('Could not load sign-in. Check your connection and refresh.'));
       document.head.append(script);
@@ -717,7 +717,15 @@ async function verifyCode() {
     const result = authIntent === 'login'
       ? await pending.attemptFirstFactorVerification({ strategy: 'email_code', code: otp })
       : await pending.attemptEmailAddressVerification({ code: otp });
-    if (result.status !== 'complete') throw new Error('Could not finish signing in. Try again.');
+    if (result.status !== 'complete') {
+      // Clerk may ask a suspicious-looking sign-up to pass a challenge that a custom form cannot show. Its hosted page runs the challenge itself.
+      if (result.missingFields?.includes('protect_check') && clerk.redirectToSignUp) {
+        notify('One more security check. Taking you to Clerk to finish.');
+        await clerk.redirectToSignUp({ signUpFallbackRedirectUrl: location.href, signInFallbackRedirectUrl: location.href });
+        return;
+      }
+      throw new Error('Could not finish signing in. Try again.');
+    }
     await clerk.setActive({ session: result.createdSessionId });
     await afterSignIn();
   } catch (error) {
