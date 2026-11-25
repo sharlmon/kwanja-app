@@ -243,3 +243,12 @@ body.is-welcome .shell { display: none; }
 .mini-total b { color: var(--ink); font-size: 1.1rem; font-variant-numeric: tabular-nums; }
 .auth-art { margin-bottom: 22px; }
 .otp-field { margin-bottom: 16px; }
+
+/* no extra motion: nothing animates, bobs, slides or springs, and nothing floats over the page except the bottom bar and toasts */
+*, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+.button:active, .pill:active, .public-button:active, .duo-pill:active, .chase:active, .debt-card:active, .numpad button:active, .chips button:active, .auth-provider:active { transform: none; }
+.fab:hover, .fab:active, button.coin:hover, button.coin:active, a.wallet-card:active { transform: none; }
+.sample .coin { display: none; }
+.public-install { position: static; align-self: flex-start; margin-top: 12px; border: 1px solid var(--line); background: var(--white); color: var(--ink); box-shadow: none; }
+.public-install:hover { background: var(--page2); }
+.public-site:has(.public-install:not([hidden])) .public-footer { padding-bottom: 0; }
