@@ -7,9 +7,11 @@
   <title>Kwanja | Business ledger</title>
   <meta name="description" content="Track what customers owe you and what you owe suppliers.">
   <link rel="icon" href="logo/kwanja-mark.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <link rel="preload" href="fonts/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <link rel="stylesheet" href="ledger.css">
   <script src="config.js"></script>
   <script src="ledger.js" defer></script>
@@ -60,12 +62,12 @@
 
         <section class="banner" id="banner" aria-live="polite"></section>
 
-        <section class="card" aria-labelledby="chase-title">
+        <section class="card" id="follow-section" aria-labelledby="chase-title">
           <div class="card-head"><h2 id="chase-title">Follow up</h2><button class="mini" type="button" data-action="new"><svg class="icon"><use href="#i-plus"/></svg>Add</button></div>
           <div id="follow-list" class="chase-row"></div>
         </section>
 
-        <section class="card" aria-labelledby="recent-title">
+        <section class="card" id="recent-section" aria-labelledby="recent-title">
           <div class="card-head"><h2 id="recent-title">Recent entries</h2><a class="more" href="#ledger">see more</a></div>
           <div id="recent-list" class="list"></div>
         </section>

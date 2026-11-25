@@ -195,11 +195,11 @@ function entryStatus(entry) {
 
 const signed = (entry) => (!outstanding(entry) ? money(entry.cents) : `${entry.direction === 'payable' ? '\u2212' : '+'}${money(outstanding(entry))}`);
 
-function entryRow(entry) {
+function entryRow(entry, compact = false) {
   const status = entryStatus(entry);
-  return `<button class="entry-row" type="button" data-action="detail" data-direction="${entry.direction}" data-settled="${!outstanding(entry)}" data-entry="${escape(entry.id)}">
-    ${avatar(entry.contact)}
-    <span class="row-main"><strong>${escape(entry.contact)}</strong><small>${escape(entry.note || directions[entry.direction])}</small></span>
+  return `<button class="entry-row${compact === true ? ' compact' : ''}" type="button" data-action="detail" data-direction="${entry.direction}" data-settled="${!outstanding(entry)}" data-entry="${escape(entry.id)}">
+    ${compact === true ? '' : avatar(entry.contact)}
+    <span class="row-main"><strong>${escape(compact === true ? (entry.note || directions[entry.direction]) : entry.contact)}</strong><small>${compact === true ? `${directions[entry.direction]} · added ${displayDate(entry.date)}` : escape(entry.note || directions[entry.direction])}</small></span>
     <span class="row-side"><strong class="row-amount"><span class="sr-only">${directions[entry.direction]}, </span>${signed(entry)}</strong>
     <small class="row-status ${status.color}">${status.text}</small></span>
   </button>`;
@@ -236,6 +236,8 @@ function renderOverview() {
   byId('receivable-count').textContent = plural(receivable.length, 'open debt');
   byId('payable-count').textContent = plural(payable.length, 'open bill');
 
+  byId('follow-section').hidden = !entries.length;
+  byId('recent-section').hidden = !entries.length;
   const first = overdue[0];
   byId('banner').innerHTML = !entries.length
     ? `<div class="banner-copy"><strong>Start your ledger</strong><p>Add the first person who owes you, then remind them in one tap.</p></div><button class="coin" type="button" data-action="new" aria-label="Add your first debt">${icon('plus')}</button>`
@@ -282,7 +284,16 @@ function renderContacts() {
   }
   byId('contacts-list').innerHTML = [...groups.values()]
     .sort((a, b) => a[0].contact.localeCompare(b[0].contact))
-    .map((contactEntries) => `<section class="contact-group"><h2>${escape(contactEntries[0].contact)}</h2>${contactEntries.map(entryRow).join('')}</section>`)
+    .map((contactEntries) => {
+      const net = contactEntries.reduce((sum, entry) => sum + (entry.direction === 'payable' ? -outstanding(entry) : outstanding(entry)), 0);
+      const open = contactEntries.filter((entry) => outstanding(entry) > 0).length;
+      const tone = net > 0 ? 'receivable' : net < 0 ? 'payable' : 'settled';
+      const amount = net === 0 ? 'Settled' : `${net > 0 ? '+' : '\u2212'}${money(Math.abs(net))}`;
+      return `<section class="contact-group"><header class="cg-head">${avatar(contactEntries[0].contact)}
+        <span class="row-main"><h2>${escape(contactEntries[0].contact)}</h2><small>${open ? plural(open, 'open entry', 'open entries') : 'All settled'}</small></span>
+        <strong class="cg-net ${tone}">${amount}</strong></header>
+        ${contactEntries.map((entry) => entryRow(entry, true)).join('')}</section>`;
+    })
     .join('') || empty('Add a debt to add your first contact.');
 }
 

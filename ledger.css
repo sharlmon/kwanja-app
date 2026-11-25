@@ -1,3 +1,4 @@
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 400 700; font-display: swap; src: url("fonts/dm-sans-latin.woff2") format("woff2"); }
 /* Kwanja ledger. Direction: soft neutral canvas, white rounded cards, one lime accent, black pills.
    Money you are owed is lime or green with a plus sign; money you owe is black or red with a minus sign. Light theme only. */
 :root {
@@ -273,3 +274,15 @@ body.is-welcome .shell { visibility: hidden; }
 .resend { align-self: center; margin-top: 14px; }
 .account { margin-top: 12px; display: grid; gap: 8px; }
 .account .button { min-height: 50px; }
+
+/* contacts */
+.cg-head { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 13px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.cg-head h2 { font-size: 1.05rem; }
+.cg-head small { display: block; color: var(--muted); font-size: .8rem; }
+.cg-net { font-size: 1rem; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.cg-net.receivable { color: var(--plus); }
+.cg-net.payable { color: var(--minus); }
+.cg-net.settled { color: var(--muted); }
+.entry-row.compact { grid-template-columns: minmax(0, 1fr) auto; padding: 12px 0 12px 61px; }
+.contact-group .entry-row + .entry-row { border-top: 1px solid var(--line); }
+.hide-amounts .cg-net { filter: blur(12px); user-select: none; }
