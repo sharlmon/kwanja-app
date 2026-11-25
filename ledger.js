@@ -177,7 +177,6 @@ async function loadApiLedger() {
     status.innerHTML = html`<span>Could not connect to the ledger.</span> <button class="button" type="button" data-action="retry">Try again</button>`;
   }
   render();
-  if (status.hidden) offerWalkthrough();
 }
 
 async function submitToApi(form, path, payload, idempotent = true) {
@@ -236,11 +235,18 @@ function entryRow(entry, compact = false) {
 function entryCard(entry) {
   const status = entryStatus(entry);
   const settled = !outstanding(entry);
-  return html`<button class="debt-card ${settled ? 'settled' : entry.direction}" type="button" data-action="detail" data-direction="${entry.direction}" data-entry="${escape(entry.id)}">
-    <span class="dc-top"><strong class="dc-name">${escape(entry.contact)}</strong><span class="dc-chip ${status.color}">${status.text}</span></span>
-    <span class="dc-amount"><span class="sr-only">${t(directions[entry.direction])}, </span>${money(settled ? entry.cents : outstanding(entry))}</span>
-    <span class="dc-foot"><span>${escape(entryDescription(entry))}</span><span>${t(directions[entry.direction])}</span></span>
-    <span class="dc-mark" aria-hidden="true">Kwanja</span>
+  const stamp = settled ? t('Settled') : status.color === 'overdue' ? t('Overdue') : '';
+  const stampClass = settled ? 'paid' : status.color;
+  const reference = entry.job_reference || entry.contact.split(/\s+/).map((word) => Array.from(word)[0]).slice(0, 2).join('').toUpperCase();
+  return html`<button class="ticket ${settled ? 'settled' : entry.direction}" type="button" data-action="detail" data-direction="${entry.direction}" data-entry="${escape(entry.id)}">
+    <span class="ticket-stub"><b class="ticket-ref">${escape(reference)}</b><span class="ticket-date">${displayDate(entry.date)}</span><span class="ticket-dir">${t(directions[entry.direction])}</span></span>
+    <span class="ticket-body">
+      <span class="ticket-name">${escape(entry.contact)}</span>
+      <span class="ticket-desc">${escape(entryDescription(entry))}</span>
+      <span class="ticket-balance"><span class="sr-only">${t(directions[entry.direction])}, </span>${money(settled ? entry.cents : outstanding(entry))}</span>
+      <span class="ticket-foot">${status.text}</span>
+    </span>
+    ${stamp ? html`<span class="stamp ${stampClass}">${stamp}</span>` : ''}
   </button>`;
 }
 
@@ -290,6 +296,7 @@ function renderOverview() {
   byId('receivable-count').textContent = plural(receivable.length, 'open debt');
   byId('payable-count').textContent = plural(payable.length, 'open bill');
 
+  renderGuide();
   byId('follow-section').hidden = !entries.length;
   byId('recent-section').hidden = !entries.length;
   byId('legacy-follow-add').hidden = workshopLedger;
@@ -423,11 +430,6 @@ function showDialog(title, content, focusSelector) {
   dialog.scrollTop = 0;
 }
 
-const walkthroughSteps = [
-  ['Add your first debt', 'plus', 'Use the + button to log what a customer owes you or what you owe a supplier.'],
-  ['Record a payment', 'check', 'Open a ledger entry and choose Record payment. Enter the amount received or paid. A partial payment reduces the outstanding balance and appears in the payment history.'],
-  ['Follow up on a balance', 'whatsapp', 'Check Follow up on Overview for customer balances due. Open a WhatsApp reminder to review the message before sending it.'],
-];
 const seenWalkthroughs = new Set();
 
 function walkthroughKey() {
@@ -435,41 +437,39 @@ function walkthroughKey() {
   return 'kwanja-walkthrough:demo';
 }
 
-function offerWalkthrough() {
-  if (dialog.open || !welcome.hidden || (authMode === 'clerk' && entries.length)) return;
-  const key = walkthroughKey();
-  if (!key || seenWalkthroughs.has(key)) return;
-  try { if (localStorage.getItem(key)) return; } catch { /* storage unavailable */ }
-  if (!byId('main').contains(document.activeElement)) byId('main').focus({ preventScroll: true });
-  showWalkthrough();
-}
-
-function showWalkthrough(index = 0) {
-  const [title, symbol, copy] = walkthroughSteps[index];
-  const last = index === walkthroughSteps.length - 1;
-  let description = t(copy);
-  if (workshopLedger && index === 0) description += ' ' + t('For a repair, you can include the job reference, deposit and pickup date.');
-  if (!workshopLedger && last) description = t('Open a customer’s unpaid entry and choose WhatsApp reminder. Review the amount and message before sending it.');
-  showDialog(t(title), html`<div class="walkthrough" data-walkthrough-step="${index}">
-    <div class="walkthrough-card">
-      <span class="walkthrough-icon">${icon(symbol)}</span>
-      <div><p class="walkthrough-count">${t('Step {step} of {total}', { step: index + 1, total: walkthroughSteps.length })}</p><p>${description}</p></div>
-    </div>
-    <div class="walkthrough-actions">
-      <button class="link" type="button" data-action="close">${t(last ? 'Done' : 'Skip walkthrough')}</button>
-      <div>
-        ${index ? html`<button class="button" type="button" data-action="walkthrough-back">Back</button>` : ''}
-        <button class="button primary" type="button" data-action="${last ? 'walkthrough-add' : 'walkthrough-next'}">${t(last ? 'Add a debt' : 'Next')}</button>
-      </div>
-    </div>
-  </div>`);
-}
-
 function rememberWalkthrough() {
   const key = walkthroughKey();
   if (!key) return;
   seenWalkthroughs.add(key);
   try { localStorage.setItem(key, '1'); } catch { /* storage unavailable */ }
+}
+
+function guideDismissed() {
+  const key = walkthroughKey();
+  if (!key || seenWalkthroughs.has(key)) return true;
+  try { return Boolean(localStorage.getItem(key)); } catch { return false; }
+}
+
+// An inline checklist on Overview. It never covers the screen it describes, and each step ticks itself off from the ledger.
+function renderGuide() {
+  const el = byId('guide');
+  const open = entries.filter((entry) => outstanding(entry) > 0);
+  const hasReceivable = open.some((entry) => entry.direction === 'receivable');
+  const steps = [
+    { done: entries.length > 0, label: 'Add a job or sale', hint: workshopLedger ? 'Total, deposit already paid and a job number.' : 'Who owes you, or who you owe, and how much.', action: 'new', button: 'Add', disabled: false },
+    { done: entries.some((entry) => entry.payments.some((payment) => !payment.is_deposit)), label: 'Record a payment', hint: 'A part payment lowers the balance and stays in the history.', action: 'guide-payment', button: 'Record', disabled: !open.length },
+    { done: entries.some((entry) => entry.last_follow_up), label: 'Send a WhatsApp reminder', hint: 'You read the message before it goes.', action: 'guide-remind', button: 'Remind', disabled: !hasReceivable },
+  ];
+  const visible = !guideDismissed() && !steps.every((step) => step.done);
+  el.hidden = !visible;
+  byId('banner').hidden = visible && !entries.length;
+  if (!visible) return;
+  el.innerHTML = html`<div class="guide-head"><h2 id="guide-title">Getting started</h2><button class="link" type="button" data-action="guide-dismiss">Hide</button></div>
+    <ol class="guide-steps">${steps.map((step, index) => html`<li class="${step.done ? 'done' : ''}">
+      <span class="guide-no" aria-hidden="true">${step.done ? icon('check') : String(index + 1).padStart(2, '0')}</span>
+      <span class="guide-text"><strong>${t(step.label)}</strong><small>${t(step.hint)}</small></span>
+      ${step.done ? html`<span class="sr-only">${t('Done')}</span>` : html`<button class="button" type="button" data-action="${step.action}"${step.disabled ? ' disabled' : ''}>${t(step.button)}</button>`}
+    </li>`).join('')}</ol>`;
 }
 
 function field(label, control, help = '') {
@@ -546,15 +546,20 @@ function showNew(previous = null) {
       : html`<input name="contact" maxlength="80" list="contact-names" placeholder="Customer or supplier name" required>`)}
     <datalist id="contact-names">${names.map((name) => html`<option value="${escape(name)}"></option>`).join('')}</datalist>
     ${field('Total amount (KES)', html`<input class="big" name="amount" type="number" inputmode="decimal" min="0.01" max="1000000000" step="0.01" placeholder="0" required>`)}
-    ${workshopLedger ? html`<div class="field-grid">
-      ${field('Job or sale type', html`<select name="kind"><option value="">Choose a type</option>${Object.entries(entryKinds).map(([key, label]) => html`<option value="${key}">${t(label)}</option>`).join('')}</select>`)}
-      ${field('Reference (optional)', html`<input name="job_reference" maxlength="40" placeholder="e.g. WS-014">`)}
-    </div>
-    <label class="field"${payable ? ' hidden' : ''}><span>Customer deposit already paid (optional)</span><input name="deposit" type="number" min="0" max="1000000000" step="0.01" inputmode="decimal" placeholder="KES"${payable ? ' disabled' : ''}></label>
-    ${dateField('Pickup date (optional)', 'pickup_on')}
-    ${field('Contact’s mobile number (optional)', html`<input name="phone" type="tel" inputmode="tel" maxlength="24" placeholder="07XX XXX XXX" value="${escape(previous?.phone || '')}">`)}` : ''}
-    ${dateField('Payment due date (optional)', 'due')}
+    ${workshopLedger ? html`<label class="field"${payable ? ' hidden' : ''}><span>Customer deposit already paid (optional)</span><input name="deposit" type="number" min="0" max="1000000000" step="0.01" inputmode="decimal" placeholder="KES"${payable ? ' disabled' : ''}></label>` : ''}
     ${field('Note (optional)', html`<input name="note" maxlength="120" placeholder="e.g. Screen replacement">`)}
+    <details class="more-fields">
+      <summary>${t('More details')}</summary>
+      <div class="more-body">
+        ${workshopLedger ? html`<div class="field-grid">
+          ${field('Job or sale type', html`<select name="kind"><option value="">Choose a type</option>${Object.entries(entryKinds).map(([key, label]) => html`<option value="${key}">${t(label)}</option>`).join('')}</select>`)}
+          ${field('Reference (optional)', html`<input name="job_reference" maxlength="40" placeholder="e.g. WS-014">`)}
+        </div>
+        ${dateField('Pickup date (optional)', 'pickup_on')}
+        ${field('Contact’s mobile number (optional)', html`<input name="phone" type="tel" inputmode="tel" maxlength="24" placeholder="07XX XXX XXX" value="${escape(previous?.phone || '')}">`)}` : ''}
+        ${dateField('Payment due date (optional)', 'due')}
+      </div>
+    </details>
     <p class="form-error" role="alert" hidden></p>
     <div class="form-actions"><button class="button primary" type="submit">Save debt</button></div>
   </form>`, previous ? '[name=amount]' : '[name=contact]');
@@ -994,12 +999,22 @@ const clickActions = {
   export: showExport,
   import: () => showImport(),
   'install-app': installApp,
-  walkthrough: () => showWalkthrough(),
-  'walkthrough-next': (button) => showWalkthrough(Number(button.closest('.walkthrough').dataset.walkthroughStep) + 1),
-  'walkthrough-back': (button) => showWalkthrough(Number(button.closest('.walkthrough').dataset.walkthroughStep) - 1),
-  'walkthrough-add': () => {
-    rememberWalkthrough();
-    showNew();
+  walkthrough: () => {
+    const key = walkthroughKey();
+    if (key) { seenWalkthroughs.delete(key); try { localStorage.removeItem(key); } catch { /* storage unavailable */ } }
+    location.hash = '#overview';
+    render();
+  },
+  'guide-dismiss': () => { rememberWalkthrough(); renderGuide(); },
+  'guide-payment': () => {
+    const open = entries.filter((entry) => outstanding(entry) > 0);
+    const target = open.find(isOverdue) || open[0];
+    if (target) showDetail(target);
+  },
+  'guide-remind': () => {
+    const open = entries.filter((entry) => outstanding(entry) > 0 && entry.direction === 'receivable');
+    const target = open.find(isOverdue) || open[0];
+    if (target) { activeEntry = target; showReminder(); }
   },
   'import-template': downloadImportTemplate,
   'import-edit': () => showImport(stagedImport),
@@ -1116,7 +1131,6 @@ async function finishDemo() {
   try { localStorage.setItem(onboardedKey, '1'); } catch { /* storage unavailable */ }
   hideWelcome();
   render();
-  offerWalkthrough();
 }
 
 function stepError(step, message) {
@@ -1589,7 +1603,6 @@ dialog.addEventListener('cancel', (event) => {
 
 dialog.addEventListener('close', () => {
   stagedImport = '';
-  if (dialogContent.querySelector('.walkthrough')) rememberWalkthrough();
   const entryId = returnFocus?.dataset.entry;
   const replacement = entryId && [...byId(`${route().page}-view`).querySelectorAll('[data-entry]')].find((element) => element.dataset.entry === entryId);
   (returnFocus?.isConnected ? returnFocus : replacement || byId('main')).focus();
