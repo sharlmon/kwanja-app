@@ -829,7 +829,7 @@ async function sendCode({ resource, emailAddressId, secondFactor }) {
   if (secondFactor) {
     await resource.prepareSecondFactor({ strategy: 'email_code', emailAddressId });
   } else if (emailAddressId) {
-    await resource.prepareFirstFactorVerification({ strategy: 'email_code', emailAddressId });
+    await resource.prepareFirstFactor({ strategy: 'email_code', emailAddressId });
   } else {
     await resource.prepareEmailAddressVerification({ strategy: 'email_code' });
   }
@@ -928,7 +928,7 @@ async function verifyCode(code) {
   if (secondFactor) {
     result = await resource.attemptSecondFactor({ strategy: 'email_code', code });
   } else if (emailAddressId) {
-    result = await resource.attemptFirstFactorVerification({ strategy: 'email_code', code });
+    result = await resource.attemptFirstFactor({ strategy: 'email_code', code });
   } else {
     result = await resource.attemptEmailAddressVerification({ code });
   }
