@@ -2,10 +2,10 @@
 
 // The Pages build fills in the exact URLs shipped with this release.
 const cachePrefix = `kwanja-shell:${self.registration.scope}:`;
-const cacheName = cachePrefix + 'd0e4087cbbc68a29';
-const shellUrls = new Set(["apple-touch-icon.png", "brands/mpesa.svg", "config.e29e0d7d06cd27e2.js", "fonts/dm-sans-latin.woff2", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "index.1d2f56d95412f699.html", "language.0bfa084505b5d0b6.js", "ledger.98fd6926c1f5c1ff.css", "ledger.ca9245892a1a03fb.js", "logo/kwanja-lockup-mono-black.svg", "logo/kwanja-lockup-mono-white.svg", "logo/kwanja-lockup-reverse.svg", "logo/kwanja-lockup.svg", "logo/kwanja-mark.svg", "logo/kwanja-symbol.svg", "logo/kwanja-wordmark-mono.svg", "logo/kwanja-wordmark.svg", "manifest.webmanifest", "public.60efb664c9d2b341.css"].map((path) => new URL(path, self.registration.scope).href));
+const cacheName = cachePrefix + 'f930365d09ef45c6';
+const shellUrls = new Set(["apple-touch-icon.png", "brands/mpesa.svg", "config.e29e0d7d06cd27e2.js", "fonts/dm-sans-latin.woff2", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "index.a9dc7375c50abf57.html", "language.0bfa084505b5d0b6.js", "ledger.98fd6926c1f5c1ff.css", "ledger.ca9245892a1a03fb.js", "logo/kwanja-lockup-mono-black.svg", "logo/kwanja-lockup-mono-white.svg", "logo/kwanja-lockup-reverse.svg", "logo/kwanja-lockup.svg", "logo/kwanja-mark.svg", "logo/kwanja-symbol.svg", "logo/kwanja-wordmark-mono.svg", "logo/kwanja-wordmark.svg", "manifest.webmanifest", "public.fd6a2f579f5e9880.css"].map((path) => new URL(path, self.registration.scope).href));
 const indexUrl = new URL('index.html', self.registration.scope).href;
-const offlineIndex = new URL('index.1d2f56d95412f699.html', self.registration.scope).href;
+const offlineIndex = new URL('index.a9dc7375c50abf57.html', self.registration.scope).href;
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
