@@ -14,10 +14,9 @@
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="stylesheet" href="ledger.84a4a07a93ba0db3.css">
   <link rel="stylesheet" href="public.aea5cc70a7d98e0f.css">
-  <link rel="stylesheet" href="ticket.bb70bb15b8baf249.css">
   <script src="config.e24d0cc4c4e9f287.js"></script>
-  <script src="language.6e368d312a051adc.js" defer></script>
-  <script src="ledger.324f731473cedc7e.js" defer></script>
+  <script src="language.14e132b3cb8e6790.js" defer></script>
+  <script src="ledger.244828767066239b.js" defer></script>
 </head>
 <body class="is-welcome">
   <svg xmlns="http://www.w3.org/2000/svg" class="icon-library" aria-hidden="true">
@@ -56,7 +55,6 @@
       <div id="overview-view">
         <h1 class="sr-only" id="page-title">Overview</h1>
         <p class="sr-only" id="page-context"></p>
-        <section id="guide" class="guide" aria-labelledby="guide-title" hidden></section>
         <section class="wallets" aria-label="Ledger balances">
           <a class="wallet-card wallet-in" href="#ledger/receivable">
             <span class="wallet-label"><span class="wallet-icon"><svg class="icon" aria-hidden="true"><use href="#i-in"/></svg></span>Owed to you</span>
@@ -110,6 +108,7 @@
       <section id="settings-view" aria-labelledby="settings-title" hidden>
         <h1 class="view-title" id="settings-title">Settings</h1>
         <div class="contact-group settings-card"><h2>Language</h2>
+          <select class="language-choice" data-language aria-label="Language"><option value="en" lang="en">English</option><option value="sw" lang="sw">Kiswahili</option></select>
         </div>
         <div class="contact-group settings-card"><h2>Display</h2>
           <button class="button" type="button" data-action="privacy" aria-pressed="false">Hide amounts</button>
@@ -123,11 +122,11 @@
     </main>
 
     <nav class="dock" aria-label="Workspace">
-      <a href="#overview" data-nav="overview" aria-label="Overview"><svg class="icon"><use href="#i-home"/></svg><span>Overview</span></a>
-      <a href="#ledger" data-nav="ledger" aria-label="Ledger"><svg class="icon"><use href="#i-ledger"/></svg><span>Ledger</span></a>
+      <a href="#overview" data-nav="overview" aria-label="Overview"><svg class="icon"><use href="#i-home"/></svg></a>
+      <a href="#ledger" data-nav="ledger" aria-label="Ledger"><svg class="icon"><use href="#i-ledger"/></svg></a>
       <button class="fab" type="button" data-action="new" aria-label="Add debt"><svg class="icon"><use href="#i-plus"/></svg></button>
-      <a href="#contacts" data-nav="contacts" aria-label="Contacts"><svg class="icon"><use href="#i-people"/></svg><span>Contacts</span></a>
-      <button class="dock-search" type="button" data-action="find-entry" aria-label="Find a customer or job"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><span>Search</span></button>
+      <a href="#contacts" data-nav="contacts" aria-label="Contacts"><svg class="icon"><use href="#i-people"/></svg></a>
+      <button class="dock-search" type="button" data-action="find-entry" aria-label="Find a customer or job"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></button>
     </nav>
   </div>
 
@@ -138,7 +137,7 @@
         <div class="public-bar">
           <a class="brand" href="#home" aria-label="Kwanja home"><img src="logo/kwanja-lockup.svg" alt="Kwanja"></a>
           <nav class="public-nav" aria-label="About Kwanja"><a href="#how-it-works">How it works</a><a href="#about">About us</a><a href="#questions">FAQ</a></nav>
-          <div class="public-account"><select class="language-choice" data-language aria-label="Language"><option value="en" lang="en">English</option><option value="sw" lang="sw">Kiswahili</option></select><a class="public-login" href="#login">Log in</a><a class="pill primary" href="#signup">Create account</a></div>
+          <div class="public-account"><a class="public-login" href="#login">Log in</a><a class="pill primary" href="#signup">Create account</a></div>
         </div>
       </header>
       <main id="public-main" tabindex="-1">
@@ -146,59 +145,26 @@
           <div class="hero-copy">
             <p class="eyebrow"><span class="lime-dot"></span>For tech shops and repair shops in Nairobi</p>
             <select class="language-choice" data-language aria-label="Language"><option value="en" lang="en">English</option><option value="sw" lang="sw">Kiswahili</option></select>
-            <h1 id="public-title" tabindex="-1">A deposit today. <mark>The balance at pickup.</mark></h1>
-            <p class="lede">Each job keeps its deposit, pickup date and unpaid balance on one ticket, so you know what a customer owes before you hand the device back.</p>
+            <h1 id="public-title" tabindex="-1">Track repair balances. <mark>Get paid.</mark></h1>
+            <p class="lede">Record deposits, pickup dates and device sales on credit. See what each customer still owes when they return to your shop.</p>
             <div class="hero-actions"><a class="pill primary large" href="#signup">Create account</a><a class="pill light large" href="#repair-demo">Try a repair demo</a></div>
             <button class="pill public-install" type="button" data-action="install-app" hidden><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>Install Kwanja</button>
             <button class="public-demo link" type="button" data-action="skip" hidden>Explore the demo ledger</button>
           </div>
-          <figure class="sample" aria-label="Example repair ticket with a deposit and a balance to collect">
-            <div class="ticket receivable">
-              <div class="ticket-stub"><b class="ticket-ref">WS-014</b><span class="ticket-date">17 Nov</span><span class="ticket-dir">Owed to you</span></div>
-              <div class="ticket-body">
-                <span class="ticket-name">Amina Mwangi</span>
-                <span class="ticket-desc">Laptop screen replacement</span>
-                <dl class="ticket-math"><div><dt>Total</dt><dd>8,200</dd></div><div><dt>Deposit</dt><dd>&minus; 2,000</dd></div><div class="bal"><dt>Balance</dt><dd>KES 6,200</dd></div></dl>
-                <span class="ticket-foot">Pickup 21 Nov</span>
-              </div>
-              <span class="stamp overdue">Overdue</span>
+          <figure class="sample" aria-label="Example ledger showing customer and supplier balances">
+            <span class="coin" aria-hidden="true"><svg class="icon"><use href="#i-whatsapp"/></svg></span>
+            <div class="sample-top"><span><svg class="icon" aria-hidden="true"><use href="#i-ledger"/></svg>Westlands Device Repair</span><span class="chip">Sample ledger</span></div>
+            <div class="sample-wallets">
+              <div class="wallet-card wallet-in"><span class="wallet-label"><svg class="icon" aria-hidden="true"><use href="#i-in"/></svg>Owed to you</span><strong class="wallet-value"><small>KES</small> 31,600</strong></div>
+              <div class="wallet-card wallet-out"><span class="wallet-label"><svg class="icon" aria-hidden="true"><use href="#i-out"/></svg>You owe</span><strong class="wallet-value"><small>KES</small> 18,400</strong></div>
             </div>
+            <div class="sample-row"><span class="contact-avatar avatar-0" aria-hidden="true">AM</span><div><b>Amina Mwangi</b><small>Laptop screen replacement · deposit paid</small></div><div><b class="plus">+KES 6,200</b><small class="late">Overdue</small></div></div>
+            <div class="sample-row"><span class="contact-avatar avatar-3" aria-hidden="true">MI</span><div><b>Metro IT Services</b><small>Refurbished laptop sale on credit</small></div><div><b class="plus">+KES 25,400</b><small>Due 2 Dec</small></div></div>
             <figcaption><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg>Review a reminder before sending it on WhatsApp</figcaption>
           </figure>
         </section>
-<section class="public-width public-section" id="how-it-works" aria-labelledby="how-heading">
-          <div class="section-intro"><p class="eyebrow"><span class="lime-dot"></span>How it works</p><h2 id="how-heading">One ticket for each job.</h2><p class="section-lede">The deposit, the balance and the follow-up stay together.</p></div>
-          <div class="how-grid">
-            <div class="public-steps">
-            <article><span class="step-badge"><svg class="icon" aria-hidden="true"><use href="#i-ledger"/></svg></span><h3>Record the job or sale</h3><p>Add the customer, total, and any deposit already paid. Keep the job reference, pickup date, and payment due date together.</p></article>
-            <article><span class="step-badge"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg></span><h3>Chase with the right amount</h3><p>See which customers are due for a follow-up. Open a WhatsApp draft with the outstanding amount and note when they promise to pay.</p></article>
-            <article><span class="step-badge"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><h3>Record the payment</h3><p>Enter a payment yourself or paste a supported M-Pesa SMS and review the details. Partial payments reduce the balance as you record them.</p><p class="step-note"><img class="brand-mark" src="brands/mpesa.svg" alt="M-Pesa">Reads M-Pesa confirmation messages</p></article>
-          </div>
-            
-          </div>
-        </section>
-        <section class="public-width public-section anatomy" id="anatomy" aria-labelledby="anatomy-title">
-          <div class="section-intro"><p class="eyebrow">An example job</p><h2 id="anatomy-title">A phone that stopped charging.</h2><p class="section-lede">A deposit at the counter, a part ordered, a balance at pickup. One ticket follows the job from the bench to the till.</p></div>
-          <div class="anatomy-stage">
-            
-            <div class="ticket receivable anatomy-ticket" role="img" aria-label="Repair ticket WS-019 for Brian Otieno. Total 3,500 shillings, deposit 1,000, balance 2,500.">
-              <div class="ticket-stub"><b class="ticket-ref">WS-019</b><span class="ticket-date">24 Nov</span><span class="ticket-dir">Owed to you</span></div>
-              <div class="ticket-body">
-                <span class="ticket-name">Brian Otieno</span>
-                <span class="ticket-desc">Phone charging fault</span>
-                <dl class="ticket-math"><div><dt>Total</dt><dd>3,500</dd></div><div><dt>Deposit</dt><dd>&minus; 1,000</dd></div><div class="bal"><dt>Balance</dt><dd>KES 2,500</dd></div></dl>
-                <span class="ticket-foot">Pickup Fri</span>
-              </div>
-            </div>
-            <ol class="anatomy-steps">
-              <li><b>Mon</b><span>Brought in. Fault found at the bench. KES 1,000 deposit taken.</span></li>
-              <li><b>Wed</b><span>Part replaced. The customer gets a WhatsApp message.</span></li>
-              <li><b>Fri</b><span>Picked up. KES 2,500 balance paid by M-Pesa. Ticket settled.</span></li>
-            </ol>
-          </div>
-        </section>
         <section class="public-width public-section" id="repair-demo" aria-labelledby="repair-demo-title">
-          <div class="split"><div class="section-intro"><p class="eyebrow">Try it</p><h2 id="repair-demo-title">Try a repair balance</h2><p class="section-lede">Use a sample job before creating an account.</p></div>
+          <div class="section-intro"><h2 id="repair-demo-title">Try a repair balance</h2><p class="section-lede">Use a sample job before creating an account.</p></div>
           <div class="repair-demo">
             <div class="repair-demo-job"><strong>Laptop screen replacement</strong><span>Amina Mwangi · Job WS-014</span><span>KES 8,200 total · KES 2,000 deposit already paid</span></div>
             <p class="repair-demo-balance" id="repair-demo-balance" role="status">Balance KES 6,200</p>
@@ -209,15 +175,17 @@
             </div>
             <div class="repair-demo-reminder" id="repair-demo-reminder" hidden><strong>WhatsApp draft</strong><p id="repair-demo-message"></p></div>
           </div>
-        </div></section>
-        <section class="public-width bench-band" aria-labelledby="bench-title">
-          <div class="bench">
-            <div class="bench-copy"><h2 id="bench-title">A shop full of stock. Who has paid?</h2><p>Every sale on credit gets a ticket with its deposit and balance, so the stock that left the shelf is not also the debt you forget.</p><a class="pill primary large" href="#signup">Create account</a></div>
+        </section>
+        <section class="public-width public-section" id="how-it-works" aria-labelledby="how-heading">
+          <div class="section-intro"><p class="eyebrow"><span class="lime-dot"></span>How it works</p><h2 id="how-heading">From the repair counter to payment.</h2><p class="section-lede">Keep the payment details with the job.</p></div>
+          <div class="public-steps">
+            <article><span class="step-badge"><svg class="icon" aria-hidden="true"><use href="#i-ledger"/></svg></span><h3>Record the job or sale</h3><p>Add the customer, total, and any deposit already paid. Keep the job reference, pickup date, and payment due date together.</p></article>
+            <article><span class="step-badge"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg></span><h3>Follow up clearly</h3><p>See which customers are due for a follow-up. Open a WhatsApp draft with the outstanding amount and note when they promise to pay.</p></article>
+            <article><span class="step-badge"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span><h3>Record the payment</h3><p>Enter a payment yourself or paste a supported M-Pesa SMS and review the details. Partial payments reduce the balance as you record them.</p><p class="step-note"><img class="brand-mark" src="brands/mpesa.svg" alt="M-Pesa">Reads M-Pesa confirmation messages</p></article>
           </div>
         </section>
         <section class="public-width" id="about" aria-labelledby="about-heading">
           <div class="public-dark about-panel">
-            
             <p class="eyebrow on-dark"><span class="lime-dot"></span>About Kwanja</p>
             <h2 id="about-heading">Built for Nairobi’s tech and repair shops</h2>
             <div class="about-copy"><p>A customer leaves a deposit for a screen replacement and pays the balance at pickup. Another takes a refurbished laptop on credit. A parts supplier gives you a week to pay. Kwanja keeps these amounts together.</p>
@@ -225,22 +193,15 @@
           </div>
         </section>
         <section class="public-width public-section" id="questions" aria-labelledby="faq-heading">
-          <div class="split"><div class="section-intro"><p class="eyebrow"><span class="lime-dot"></span>Questions</p><h2 id="faq-heading">Common questions</h2><p class="section-lede">Straight answers before you sign up.</p></div>
+          <div class="section-intro"><p class="eyebrow"><span class="lime-dot"></span>Questions</p><h2 id="faq-heading">Common questions</h2><p class="section-lede">Straight answers before you sign up.</p></div>
           <div class="public-faq">
             <details><summary>Does Kwanja collect or hold money?</summary><p>Payments happen through your usual channels. Kwanja records the amounts and helps you prepare reminders.</p></details>
             <details><summary>Can I track supplier debts too?</summary><p>Yes. The ledger keeps money owed to you separate from money you owe. Both support partial payments.</p></details>
             <details><summary>Do I need to connect my M-Pesa account?</summary><p>No. You can enter payments yourself or paste a supported confirmation SMS. You review what Kwanja extracts before a payment is recorded.</p></details>
             <details><summary>Can I download my records?</summary><p>Yes. Export the ledger to CSV for your records or to open in a spreadsheet.</p></details>
           </div>
-        </div></section>
+        </section>
         <section class="public-width public-cta" aria-labelledby="cta-heading"><h2 id="cta-heading">Record your first repair balance.</h2><a class="pill primary large" href="#signup">Create account</a></section>
-        
-        
-        
-        
-        
-        
-        
       </main>
       <footer class="public-footer"><div class="public-width"><a class="brand" href="#home" aria-label="Kwanja home"><img src="logo/kwanja-lockup.svg" alt="Kwanja"></a><a href="#about">About us</a><a href="#questions">FAQ</a><a href="#login">Log in</a></div></footer>
     </div>
