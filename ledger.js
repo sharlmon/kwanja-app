@@ -1344,15 +1344,52 @@ async function openClerkSignIn(email) {
   }
 }
 
+// Six-digit code entry: a real input sits invisibly over six slots, so typing, pasting and backspace all work,
+// and an on-screen pad serves phones. The sixth digit submits.
+const otpInput = () => welcome.querySelector('#otp-input');
+let otpTimer;
+
+function renderOtpSlots() {
+  const input = otpInput();
+  if (!input) return;
+  const value = input.value;
+  byId('otp-slots').innerHTML = Array.from({ length: 6 }, (_, index) => `<span class="${index < value.length ? 'filled' : ''}${index === value.length && document.activeElement === input ? ' current' : ''}">${index < value.length ? value[index] : ''}</span>`).join('');
+}
+
+function otpChanged() {
+  const input = otpInput();
+  const clean = input.value.replace(/\D/g, '').slice(0, 6);
+  if (clean !== input.value) input.value = clean;
+  renderOtpSlots();
+  clearTimeout(otpTimer);
+  if (clean.length === 6) {
+    otpTimer = setTimeout(() => {
+      if (!welcome.hidden && !input.closest('[data-step]').hidden && input.value.length === 6) input.form.requestSubmit();
+    }, 150);
+  }
+}
+
+function resetOtp(focus = true) {
+  const input = otpInput();
+  clearTimeout(otpTimer);
+  input.value = '';
+  renderOtpSlots();
+  if (focus) input.focus({ preventScroll: true });
+}
+
+welcome.addEventListener('input', (event) => { if (event.target.id === 'otp-input') otpChanged(); });
+welcome.addEventListener('focusin', (event) => { if (event.target.id === 'otp-input') renderOtpSlots(); });
+welcome.addEventListener('focusout', (event) => { if (event.target.id === 'otp-input') renderOtpSlots(); });
+
 function showCodeStep(email, nextChallenge) {
   challenge = nextChallenge;
   pendingEmail = email;
   byId('otp-email').textContent = email;
   byId('auth-code-heading').textContent = t(challenge?.secondFactor ? 'Verify this sign-in' : 'Check your email');
-  welcome.querySelector('[name="code"]').value = '';
   stepError('code', '');
   markCodeSent();
   showStep('code');
+  resetOtp();
 }
 
 async function loginWithPassword(email, password, stillOnForm) {
@@ -1415,9 +1452,11 @@ async function verifyCode(code) {
   }
   if (result.status !== 'complete') {
     if (result.missingFields?.includes('protect_check') && clerk.redirectToSignUp) {
+      notify(t('One more security check. Taking you to Clerk to finish.'));
       const destination = oauthUrl();
       destination.hash = '#overview';
       await clerk.redirectToSignUp({ signUpFallbackRedirectUrl: destination.href, signInFallbackRedirectUrl: destination.href });
+      resetOtp(false);
       return;
     }
     throw new Error('Could not finish logging in. Try again.');
@@ -1465,6 +1504,12 @@ Object.assign(clickActions, {
     showStep('email');
   },
   resend: resendCode,
+  'otp-key': (button) => {
+    const input = otpInput();
+    input.value = button.dataset.key === 'del' ? input.value.slice(0, -1) : (input.value + button.dataset.key).slice(0, 6);
+    otpChanged();
+    input.focus({ preventScroll: true });
+  },
 });
 
 welcome.addEventListener('submit', async (event) => {
@@ -1505,7 +1550,7 @@ welcome.addEventListener('submit', async (event) => {
     }
   } catch (error) {
     stepError(step, authMessage(error));
-    if (step === 'code') welcome.querySelector('[name="code"]').select();
+    if (step === 'code') resetOtp();
   } finally {
     submit.disabled = false;
   }

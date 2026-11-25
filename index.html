@@ -13,10 +13,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="stylesheet" href="ledger.84a4a07a93ba0db3.css">
-  <link rel="stylesheet" href="public.aea5cc70a7d98e0f.css">
+  <link rel="stylesheet" href="public.fbdf8e734196729c.css">
   <script src="config.e24d0cc4c4e9f287.js"></script>
   <script src="language.14e132b3cb8e6790.js" defer></script>
-  <script src="ledger.244828767066239b.js" defer></script>
+  <script src="ledger.85339e1ffefe8b8c.js" defer></script>
 </head>
 <body class="is-welcome">
   <svg xmlns="http://www.w3.org/2000/svg" class="icon-library" aria-hidden="true">
@@ -210,9 +210,13 @@
       <aside class="auth-side">
         <a class="brand" href="#home" aria-label="Kwanja home"><img src="logo/kwanja-lockup-mono-black.svg" alt="Kwanja"></a>
         <div class="auth-art" aria-hidden="true">
-          <div class="w-card c3"><b>City Parts Supply</b><span>KES 18,400</span></div>
-          <div class="w-card c2"><b>Metro IT Services</b><span>KES 28,400</span></div>
-          <div class="w-card c1"><b>Amina Mwangi</b><span>KES 6,200</span><i>Overdue</i></div>
+          <div class="mini-ledger">
+            <div class="mini-head"><span>Westlands Device Repair</span><span class="mini-tag">Sample</span></div>
+            <div class="mini-row"><span class="contact-avatar avatar-0">AM</span><span class="mini-who"><b>Amina Mwangi</b><small>Laptop screen · deposit paid</small></span><span class="mini-amt"><b class="plus">+KES 6,200</b><small class="late">Overdue</small></span></div>
+            <div class="mini-row"><span class="contact-avatar avatar-3">MI</span><span class="mini-who"><b>Metro IT Services</b><small>Refurbished laptop</small></span><span class="mini-amt"><b class="plus">+KES 25,400</b><small>Due 2 Dec</small></span></div>
+            <div class="mini-row"><span class="contact-avatar avatar-1">CP</span><span class="mini-who"><b>City Parts Supply</b><small>Replacement screens</small></span><span class="mini-amt"><b class="minus">&minus;KES 18,400</b><small>Due 29 Nov</small></span></div>
+            <div class="mini-total"><span>Net outstanding</span><b>KES 13,200</b></div>
+          </div>
         </div>
         <div class="auth-pitch"><strong>Your business ledger</strong><p>Track repair deposits, device credit and parts bills.</p></div>
       </aside>
@@ -244,7 +248,11 @@
             <h1 tabindex="-1" id="auth-code-heading">Check your email</h1>
             <p class="w-sub">Enter the six-digit code sent to <b id="otp-email"></b>. <span class="demo-only">For the demo, enter any six digits.</span></p>
             <form class="auth-form" data-form="code">
-              <label class="field"><span>Verification code</span><input class="code-input" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000" required></label>
+              <div class="otp-field">
+                <div class="otp-slots" id="otp-slots" aria-hidden="true"></div>
+                <input id="otp-input" class="otp-input" name="code" type="text" inputmode="none" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required aria-label="Verification code, six digits">
+              </div>
+              <div class="numpad otp-pad" role="group" aria-label="Number pad"><button type="button" data-action="otp-key" data-key="1">1</button><button type="button" data-action="otp-key" data-key="2">2</button><button type="button" data-action="otp-key" data-key="3">3</button><button type="button" data-action="otp-key" data-key="4">4</button><button type="button" data-action="otp-key" data-key="5">5</button><button type="button" data-action="otp-key" data-key="6">6</button><button type="button" data-action="otp-key" data-key="7">7</button><button type="button" data-action="otp-key" data-key="8">8</button><button type="button" data-action="otp-key" data-key="9">9</button><span></span><button type="button" data-action="otp-key" data-key="0">0</button><button type="button" data-action="otp-key" data-key="del" aria-label="Delete last digit"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg></button></div>
               <p class="form-error" role="alert" hidden></p>
               <button class="pill primary large block" type="submit">Verify code</button>
             </form>
