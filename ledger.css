@@ -9,6 +9,9 @@
   --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --ease: cubic-bezier(.2, .8, .2, 1); --spring: cubic-bezier(.3, 1.4, .5, 1);
   --soft: 0 1px 0 #fff inset, 0 10px 30px -18px rgba(30, 30, 40, .28);
+  --lift: 0 1px 0 #fff inset, 0 28px 50px -28px rgba(20, 20, 30, .42);
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px; --s-7: 48px;
+  --fs-caption: .8125rem; --fs-small: .875rem; --fs-body: 1rem; --fs-h2: 1.125rem; --fs-title: 2rem;
   color-scheme: light;
 }
 * { box-sizing: border-box; }
@@ -24,7 +27,10 @@ button:disabled { cursor: default; opacity: .5; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 h1, h2, h3, p { margin: 0; }
 .icon-library { position: absolute; width: 0; height: 0; overflow: hidden; }
-.icon { width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.icon { width: 20px; height: 20px; flex: 0 0 auto; fill: currentColor; stroke: none; }
+.icon.wa { color: #25d366; }
+.icon.brand { width: 22px; height: 22px; }
+.brand-mark { display: inline-block; height: 20px; width: auto; vertical-align: middle; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .skip-link { position: fixed; z-index: 60; top: 12px; left: 12px; padding: 12px; background: var(--ink); color: #fff; border-radius: 12px; transform: translateY(-160%); }
 .skip-link:focus { transform: none; }
@@ -74,7 +80,7 @@ h1, h2, h3, p { margin: 0; }
 .banner-copy p { margin-top: 4px; color: #b9b9bf; font-size: .86rem; line-height: 1.4; }
 .coin { flex: none; width: 66px; height: 66px; display: grid; place-items: center; border: 0; border-radius: 50%; color: var(--lime-ink);
   background: radial-gradient(circle at 32% 28%, #f2ffb8, var(--lime) 55%, #8fb21c); box-shadow: inset 0 0 0 5px rgba(255, 255, 255, .28), inset 0 -4px 8px rgba(0, 0, 0, .18), 0 12px 24px -10px rgba(192, 228, 63, .8); transition: transform .25s var(--spring); }
-.coin .icon { width: 26px; height: 26px; stroke-width: 2; }
+.coin .icon { width: 26px; height: 26px; }
 button.coin:hover { transform: rotate(-8deg) scale(1.05); }
 button.coin:active { transform: scale(.92); }
 
@@ -94,7 +100,7 @@ h2 { font-size: 1.1rem; font-weight: 600; letter-spacing: -.02em; }
 .chase-face { position: relative; }
 .chase-face .contact-avatar { width: 58px; height: 58px; font-size: 1.02rem; }
 .chase-badge { position: absolute; right: -3px; bottom: -3px; width: 24px; height: 24px; display: grid; place-items: center; border: 2px solid var(--card); border-radius: 50%; }
-.chase-badge .icon { width: 12px; height: 12px; stroke-width: 2.4; }
+.chase-badge .icon { width: 12px; height: 12px; }
 .chase-badge.receivable { background: var(--lime); color: var(--lime-ink); }
 .chase-badge.payable { background: var(--black); color: #fff; }
 .chase-name { max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .8rem; color: var(--ink2); }
@@ -155,7 +161,7 @@ h2 { font-size: 1.1rem; font-weight: 600; letter-spacing: -.02em; }
 .dock a[aria-current="page"] { color: #fff; background: rgba(255, 255, 255, .12); }
 .dock a:hover, .dock-export:hover { color: #fff; }
 .fab { width: 48px; height: 48px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--lime); color: var(--lime-ink); transition: transform .25s var(--spring); }
-.fab .icon { width: 22px; height: 22px; stroke-width: 2.2; }
+.fab .icon { width: 22px; height: 22px; }
 .fab:hover { transform: rotate(90deg) scale(1.06); }
 .fab:active { transform: scale(.92); }
 
@@ -254,3 +260,21 @@ dialog::before { content: ""; display: block; width: 38px; height: 4px; margin: 
 .entry-row.compact { grid-template-columns: minmax(0, 1fr) auto; padding: 12px 0 12px 61px; }
 .contact-group .entry-row + .entry-row { border-top: 1px solid var(--line); }
 .hide-amounts .cg-net { filter: blur(12px); user-select: none; }
+
+/* hierarchy: cards are for important objects; collections are flat sections on the canvas */
+.section { margin-top: var(--s-6); }
+.section-head { display: flex; justify-content: space-between; align-items: center; min-height: 44px; margin-bottom: var(--s-2); }
+.section-head h2 { font-size: var(--fs-h2); }
+.section .more { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; margin: 0 -8px 0 0; padding: 0 8px; color: var(--ink2); font-size: var(--fs-small); font-weight: 600; }
+.section .more .icon { width: 16px; height: 16px; }
+.section .chase-row { padding-bottom: var(--s-2); }
+.section .chase-badge { border-color: #ececee; }
+.section .list { padding: 0; border-top: 1px solid var(--line); }
+.section .list .entry-row { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.section .empty { padding: var(--s-4) 0; }
+.balance { margin-top: var(--s-5); }
+.banner { margin-top: var(--s-5); box-shadow: var(--lift); }
+.view-title { margin-bottom: var(--s-1); }
+.view-sub { margin-bottom: var(--s-4); color: var(--muted); font-size: var(--fs-small); }
+.search { margin-top: var(--s-1); }
+.hero-amount-note { color: var(--muted); }

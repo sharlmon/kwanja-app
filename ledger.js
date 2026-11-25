@@ -243,7 +243,7 @@ function renderOverview() {
     ? `<div class="banner-copy"><strong>Start your ledger</strong><p>Add the first person who owes you, then remind them in one tap.</p></div><button class="coin" type="button" data-action="new" aria-label="Add your first debt">${icon('plus')}</button>`
     : first
     ? `<div class="banner-copy"><strong>${plural(overdue.length, 'customer')} overdue</strong><p>${money(overdueTotal)} is past due. Start with ${escape(first.contact)}.</p></div>
-       <button class="coin" type="button" data-action="remind" data-entry="${escape(first.id)}" aria-label="Send WhatsApp reminder to ${escape(first.contact)}">${icon('chat')}</button>`
+       <button class="coin" type="button" data-action="remind" data-entry="${escape(first.id)}" aria-label="Send WhatsApp reminder to ${escape(first.contact)}">${icon('whatsapp')}</button>`
     : `<div class="banner-copy"><strong>All caught up</strong><p>Nobody owes you past their due date.</p></div><span class="coin" aria-hidden="true">${icon('check')}</span>`;
 
   const chase = [...open].sort((a, b) => Number(isOverdue(b)) - Number(isOverdue(a)) || (a.due || '9').localeCompare(b.due || '9')).slice(0, 8);
@@ -272,6 +272,9 @@ function renderLedger() {
     else link.removeAttribute('aria-current');
   });
 
+  const owedTo = rows.filter((entry) => entry.direction === 'receivable').reduce((sum, entry) => sum + outstanding(entry), 0);
+  const owe = rows.filter((entry) => entry.direction === 'payable').reduce((sum, entry) => sum + outstanding(entry), 0);
+  byId('ledger-sub').textContent = [plural(rows.length, 'entry', 'entries'), owedTo ? `${money(owedTo)} owed to you` : '', owe ? `${money(owe)} you owe` : ''].filter(Boolean).join(' · ');
   byId('ledger-list').innerHTML = rows.map(entryCard).join('') || (entries.length ? empty(query ? 'No entries match your search.' : 'No entries in this view.') : emptyLedger());
 }
 
@@ -282,6 +285,7 @@ function renderContacts() {
     if (!groups.has(name)) groups.set(name, []);
     groups.get(name).push(entry);
   }
+  byId('contacts-sub').textContent = plural(groups.size, 'contact');
   byId('contacts-list').innerHTML = [...groups.values()]
     .sort((a, b) => a[0].contact.localeCompare(b[0].contact))
     .map((contactEntries) => {
@@ -352,7 +356,7 @@ function showDetail(entry) {
   const status = entryStatus(entry);
   const actions = balance > 0 ? `<div class="detail-actions">
     <button class="button primary" type="button" data-action="payment">Record payment</button>
-    ${entry.direction === 'receivable' ? `<button class="button" type="button" data-action="reminder">${icon('chat')} WhatsApp reminder</button>` : ''}
+    ${entry.direction === 'receivable' ? `<button class="button" type="button" data-action="reminder">${icon('whatsapp').replace('class="icon"', 'class="icon wa"')} WhatsApp reminder</button>` : ''}
   </div>` : '';
   const history = [...entry.payments].reverse().map((payment) => `<li>
     <span>${displayDate(payment.date)}${payment.reference ? ` · ${escape(payment.reference)}` : ''}</span><strong>${money(payment.cents)}</strong>
@@ -400,7 +404,7 @@ function showPayment(amount = '', reference = '') {
     <details class="ref"><summary>Add M-Pesa reference</summary>${field('Reference', `<input name="reference" maxlength="40" value="${escape(reference)}" placeholder="e.g. confirmation code">`)}</details>
     <p class="form-error" role="alert" hidden></p>
     <div class="form-actions"><button class="button primary" type="submit">Record payment</button>
-    <div class="pair"><button class="button" type="button" data-action="sms">Paste M-Pesa SMS</button>
+    <div class="pair"><button class="button" type="button" data-action="sms"><img class="brand-mark" src="brands/mpesa.svg" alt="">Paste M-Pesa SMS</button>
     <button class="button" type="button" data-action="back">Back</button></div></div>
   </form>`);
 }

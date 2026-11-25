@@ -135,7 +135,7 @@ body.is-welcome .shell { display: none; }
 .code-input::placeholder { color: rgba(13, 13, 14, .22); }
 .auth-providers { display: grid; gap: 10px; margin-bottom: 16px; }
 .auth-providers[hidden], .auth-provider[hidden] { display: none; }
-.auth-provider { min-height: 52px; padding: 0 18px; border: 0; border-radius: 99px; background: var(--white); box-shadow: var(--soft), inset 0 0 0 1px var(--line); font-weight: 600; transition: transform .18s var(--spring); }
+.auth-provider { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 52px; padding: 0 18px; border: 0; border-radius: 99px; background: var(--white); box-shadow: var(--soft), inset 0 0 0 1px var(--line); font-weight: 600; transition: transform .18s var(--spring); }
 .auth-provider:hover { background: #fff; }
 .auth-provider:active { transform: scale(.98); }
 .auth-provider:disabled { opacity: .5; }
@@ -175,3 +175,17 @@ body.is-welcome .shell { display: none; }
   .sample .coin { width: 56px; height: 56px; top: -22px; }
 }
 @media (prefers-reduced-motion: reduce) { .sample .coin { animation: none; } }
+
+.step-note { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--ink2); font-size: .86rem; font-weight: 600; }
+.step-note .brand-mark { height: 26px; }
+
+/* section intros: eyebrow, title, one-line lede */
+.section-intro { display: grid; gap: var(--s-3); justify-items: start; margin-bottom: clamp(20px, 3vw, 32px); }
+.section-intro h2 { margin: 0; }
+.section-lede { margin: 0; color: var(--muted); font-size: 1.05rem; }
+.public-section { padding-block: clamp(44px, 7vw, 88px); }
+.public-steps { margin-top: 0; }
+.public-faq { margin-top: 0; }
+.public-steps article { display: flex; flex-direction: column; }
+.public-steps article > p:not(.step-note) { margin-bottom: var(--s-4); }
+.step-note { margin-top: auto; }
