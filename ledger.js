@@ -1072,6 +1072,8 @@ let pendingEmail = '';
 let configuredProviders = [];
 let resendUntil = 0;
 let resendTimer;
+let resending = false;
+let verifying = false;
 
 const authMessage = (error) => {
   const first = error?.errors?.[0];
@@ -1079,6 +1081,11 @@ const authMessage = (error) => {
   if (first?.code === 'form_identifier_exists') return 'That email already has an account. Log in instead.';
   if (['form_code_incorrect', 'verification_failed'].includes(first?.code)) return 'That code is incorrect. Try again.';
   if (first?.code === 'verification_expired') return 'That code has expired. Request a new one.';
+  if (first?.code === 'dev_email_provider_blocked') return 'This email provider could not receive a code. Try another email address.';
+  if (['dev_daily_email_recipient_limit_exceeded', 'dev_monthly_email_limit_exceeded', 'transactional_email_paused', 'transactional_email_blocked'].includes(first?.code)) {
+    return 'Email codes are temporarily unavailable. Try again later.';
+  }
+  if (error?.status === 429 || first?.code === 'transactional_email_rate_limited') return 'Too many code requests. Wait a moment before trying again.';
   return first?.longMessage || error?.message || 'Something went wrong. Try again.';
 };
 
@@ -1306,17 +1313,24 @@ async function leaveSession({ expired = false } = {}) {
   if (expired) notify('Your session has ended. Log in again.');
 }
 
-async function sendCode({ resource, emailAddressId, secondFactor }) {
+function sendCode({ resource, emailAddressId, secondFactor }) {
   if (secondFactor) {
-    await resource.prepareSecondFactor({ strategy: 'email_code', emailAddressId });
-  } else if (emailAddressId) {
-    await resource.prepareFirstFactor({ strategy: 'email_code', emailAddressId });
-  } else {
-    await resource.prepareEmailAddressVerification({ strategy: 'email_code' });
+    return resource.prepareSecondFactor({ strategy: 'email_code', emailAddressId });
   }
+  if (emailAddressId) return resource.prepareFirstFactor({ strategy: 'email_code', emailAddressId });
+  return resource.prepareEmailAddressVerification({ strategy: 'email_code' });
 }
 
-async function beginEmail(email, intent) {
+const needsSignUpCheck = (resource) => resource?.missingFields?.includes('protect_check');
+
+async function continueClerkSignUp() {
+  notify('One more security check. Taking you to Clerk to finish.');
+  const destination = oauthUrl();
+  destination.hash = '#overview';
+  await clerk.redirectToSignUp({ signUpFallbackRedirectUrl: destination.href, signInFallbackRedirectUrl: destination.href });
+}
+
+async function beginEmail(email, intent, stillOnForm) {
   let nextChallenge;
   if (intent === 'login') {
     const resource = await clerk.client.signIn.create({ identifier: email });
@@ -1324,10 +1338,27 @@ async function beginEmail(email, intent) {
     if (!factor?.emailAddressId) throw new Error('This account cannot log in with an email code.');
     nextChallenge = { resource, emailAddressId: factor.emailAddressId };
   } else {
-    nextChallenge = { resource: await clerk.client.signUp.create({ emailAddress: email }) };
+    try {
+      const resource = await clerk.client.signUp.create({ emailAddress: email });
+      if (!stillOnForm()) return null;
+      const prepared = needsSignUpCheck(resource) ? resource : await sendCode({ resource }) || resource;
+      if (!stillOnForm()) return null;
+      if (needsSignUpCheck(prepared)) {
+        await continueClerkSignUp();
+        return null;
+      }
+      return { resource: prepared };
+    } catch (error) {
+      if (stillOnForm() && error?.errors?.[0]?.code === 'protect_check_script_load_failed') {
+        await continueClerkSignUp();
+        return null;
+      }
+      throw error;
+    }
   }
-  await sendCode(nextChallenge);
-  return nextChallenge;
+  if (!stillOnForm()) return null;
+  const prepared = await sendCode(nextChallenge);
+  return { ...nextChallenge, resource: prepared || nextChallenge.resource };
 }
 
 async function openClerkSignIn(email) {
@@ -1364,7 +1395,7 @@ function otpChanged() {
   clearTimeout(otpTimer);
   if (clean.length === 6) {
     otpTimer = setTimeout(() => {
-      if (!welcome.hidden && !input.closest('[data-step]').hidden && input.value.length === 6) input.form.requestSubmit();
+      if (!verifying && !resending && codeStepActive() && input.value.length === 6) input.form.requestSubmit();
     }, 150);
   }
 }
@@ -1385,6 +1416,7 @@ function showCodeStep(email, nextChallenge) {
   challenge = nextChallenge;
   pendingEmail = email;
   byId('otp-email').textContent = email;
+  if (byId('otp-help')) byId('otp-help').hidden = authMode !== 'clerk';
   byId('auth-code-heading').textContent = t(challenge?.secondFactor ? 'Verify this sign-in' : 'Check your email');
   stepError('code', '');
   markCodeSent();
@@ -1403,20 +1435,23 @@ async function loginWithPassword(email, password, stillOnForm) {
     const factor = resource.supportedSecondFactors?.find((item) => item.strategy === 'email_code');
     if (factor?.emailAddressId) {
       const nextChallenge = { resource, emailAddressId: factor.emailAddressId, secondFactor: true };
-      await sendCode(nextChallenge);
-      if (stillOnForm()) showCodeStep(email, nextChallenge);
+      const prepared = await sendCode(nextChallenge);
+      if (stillOnForm()) showCodeStep(email, { ...nextChallenge, resource: prepared || resource });
       return;
     }
   }
   await openClerkSignIn(email);
 }
 
+const codeStepActive = () => !welcome.hidden && !welcome.querySelector('[data-step="code"]').hidden;
+
 function renderResend() {
   clearTimeout(resendTimer);
   const button = welcome.querySelector('[data-action="resend"]');
   const seconds = Math.max(0, Math.ceil((resendUntil - Date.now()) / 1000));
-  button.disabled = seconds > 0;
-  button.textContent = seconds ? t('Resend in {seconds}s', { seconds }) : t('Resend code');
+  button.disabled = seconds > 0 || resending || verifying;
+  welcome.querySelector('[data-action="change-email"]').disabled = resending || verifying;
+  button.textContent = resending ? t('Requesting code…') : seconds ? t('Resend in {seconds}s', { seconds }) : t('Resend code');
   if (seconds) resendTimer = setTimeout(renderResend, 1000);
 }
 
@@ -1425,23 +1460,37 @@ function markCodeSent() {
   renderResend();
 }
 
-async function resendCode(button) {
+async function resendCode() {
   if (authMode !== 'clerk') { notify('Demo mode. No email is sent.'); return; }
-  if (Date.now() < resendUntil) return;
-  button.disabled = true;
+  if (!challenge || resending || verifying || Date.now() < resendUntil) return;
+  const active = challenge;
+  const stillOnCode = () => codeStepActive() && challenge === active;
+  resending = true;
+  renderResend();
   stepError('code', '');
   try {
-    await sendCode(challenge);
+    const prepared = await sendCode(active);
+    if (!stillOnCode()) return;
+    if (!active.emailAddressId && needsSignUpCheck(prepared)) {
+      await continueClerkSignUp();
+      return;
+    }
+    if (prepared) active.resource = prepared;
+    resetOtp();
     markCodeSent();
     notify('New code requested.');
   } catch (error) {
-    button.disabled = false;
-    stepError('code', authMessage(error));
+    if (stillOnCode()) stepError('code', authMessage(error));
+  } finally {
+    resending = false;
+    renderResend();
   }
 }
 
 async function verifyCode(code) {
-  const { resource, emailAddressId, secondFactor } = challenge;
+  const active = challenge;
+  if (!active) throw new Error('Request a new code to continue.');
+  const { resource, emailAddressId, secondFactor } = active;
   let result;
   if (secondFactor) {
     result = await resource.attemptSecondFactor({ strategy: 'email_code', code });
@@ -1450,13 +1499,18 @@ async function verifyCode(code) {
   } else {
     result = await resource.attemptEmailAddressVerification({ code });
   }
+  if (!codeStepActive() || challenge !== active) return;
   if (result.status !== 'complete') {
-    if (result.missingFields?.includes('protect_check') && clerk.redirectToSignUp) {
-      notify(t('One more security check. Taking you to Clerk to finish.'));
-      const destination = oauthUrl();
-      destination.hash = '#overview';
-      await clerk.redirectToSignUp({ signUpFallbackRedirectUrl: destination.href, signInFallbackRedirectUrl: destination.href });
-      resetOtp(false);
+    if (!emailAddressId && needsSignUpCheck(result)) {
+      await continueClerkSignUp();
+      return;
+    }
+    if (emailAddressId && !secondFactor && result.status === 'needs_second_factor') {
+      const factor = result.supportedSecondFactors?.find((item) => item.strategy === 'email_code');
+      if (!factor?.emailAddressId) return openClerkSignIn(pendingEmail);
+      const next = { resource: result, emailAddressId: factor.emailAddressId, secondFactor: true };
+      const prepared = await sendCode(next);
+      if (codeStepActive() && challenge === active) showCodeStep(pendingEmail, { ...next, resource: prepared || result });
       return;
     }
     throw new Error('Could not finish logging in. Try again.');
@@ -1498,6 +1552,7 @@ Object.assign(clickActions, {
   },
   'password-recovery': () => openClerkSignIn(welcome.querySelector('[data-form="email"]').elements.email.value.trim()),
   'change-email': () => {
+    if (verifying || resending) return;
     challenge = null;
     welcome.querySelector('[data-form="email"] [name="email"]').value = pendingEmail;
     updateEmailScreen();
@@ -1505,6 +1560,7 @@ Object.assign(clickActions, {
   },
   resend: resendCode,
   'otp-key': (button) => {
+    if (verifying || resending) return;
     const input = otpInput();
     input.value = button.dataset.key === 'del' ? input.value.slice(0, -1) : (input.value + button.dataset.key).slice(0, 6);
     otpChanged();
@@ -1518,12 +1574,18 @@ welcome.addEventListener('submit', async (event) => {
   const step = form.dataset.form;
   const values = Object.fromEntries(new FormData(form));
   const submit = form.querySelector('[type=submit]');
-  if (submit.disabled) return;
+  if (submit.disabled || (step === 'code' && resending)) return;
   if (apiMode && !navigator.onLine) {
     stepError(step, 'You’re offline. Reconnect and try again.');
     return;
   }
   submit.disabled = true;
+  const submittedChallenge = challenge;
+  if (step === 'code') {
+    verifying = true;
+    otpInput().readOnly = true;
+    renderResend();
+  }
   stepError(step, '');
   try {
     if (step === 'email') {
@@ -1535,8 +1597,8 @@ welcome.addEventListener('submit', async (event) => {
       if (passwordAuthEnabled() && authIntent === 'login' && method === 'password') {
         await loginWithPassword(email, values.password, stillOnForm);
       } else {
-        const requestedCode = authMode === 'clerk' ? await beginEmail(email, authIntent) : null;
-        if (stillOnForm()) showCodeStep(email, requestedCode);
+        const requestedCode = authMode === 'clerk' ? await beginEmail(email, authIntent, stillOnForm) : null;
+        if (stillOnForm() && (requestedCode || authMode !== 'clerk')) showCodeStep(email, requestedCode);
       }
     } else if (step === 'code') {
       if (authMode === 'clerk') await verifyCode(values.code);
@@ -1549,10 +1611,17 @@ welcome.addEventListener('submit', async (event) => {
       else await openNewLedger();
     }
   } catch (error) {
-    stepError(step, authMessage(error));
-    if (step === 'code') resetOtp();
+    if (step !== 'code' || (codeStepActive() && challenge === submittedChallenge)) {
+      stepError(step, authMessage(error));
+      if (step === 'code') resetOtp();
+    }
   } finally {
     submit.disabled = false;
+    if (step === 'code') {
+      verifying = false;
+      otpInput().readOnly = false;
+      renderResend();
+    }
   }
 });
 
