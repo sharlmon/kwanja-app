@@ -217,14 +217,12 @@ body.is-welcome .shell { display: none; }
 
 /* six-digit code entry */
 .otp-field { position: relative; }
-#clerk-captcha:empty { display: none; }
-.auth-card .otp-help { margin-top: 8px; font-size: .85rem; }
-.otp-slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: clamp(4px, 2vw, 10px); width: min(100%, 338px); margin-inline: auto; }
-.otp-slots span { min-width: 0; height: 60px; display: grid; place-items: center; border-radius: 14px; background: var(--white); box-shadow: var(--soft); font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.otp-slots { display: flex; justify-content: center; gap: 10px; }
+.otp-slots span { width: 48px; height: 60px; display: grid; place-items: center; border-radius: 14px; background: var(--white); box-shadow: var(--soft); font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .otp-slots span.current { box-shadow: 0 0 0 2px var(--ink); }
 .otp-input { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; color: transparent; caret-color: transparent; opacity: 0; font-size: 16px; cursor: text; }
 .otp-pad { width: min(100%, 340px); margin-inline: auto; }
-@media (max-width: 360px) { .otp-slots span { height: 54px; } }
+@media (max-width: 360px) { .otp-slots { gap: 6px; } .otp-slots span { width: 42px; height: 54px; } }
 
 /* sign-in panel: a straight, readable ledger instead of tilted cards */
 .auth-art { display: flex; align-items: center; }
@@ -254,3 +252,58 @@ body.is-welcome .shell { display: none; }
 .public-install { position: static; align-self: flex-start; margin-top: 12px; border: 1px solid var(--line); background: var(--white); color: var(--ink); box-shadow: none; }
 .public-install:hover { background: var(--page2); }
 .public-site:has(.public-install:not([hidden])) .public-footer { padding-bottom: 0; }
+
+/* ===== plain site: no highlighter, glow, glass, gradients, decorative shapes or icon badges ===== */
+.lime-dot { display: none; }
+.eyebrow { gap: 0; color: var(--muted); font-size: .88rem; font-weight: 600; letter-spacing: 0; }
+.section-intro .eyebrow { display: none; }
+
+/* header: a plain bar with a rule, not a floating glass pill */
+.public-header { position: sticky; top: 0; z-index: 20; padding: 0; background: var(--page); border-bottom: 1px solid var(--line); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.public-bar { width: min(1120px, calc(100% - 40px)); padding: 12px 0; border-radius: 0; background: none; box-shadow: none; }
+.public-nav a:hover, .public-login:hover { background: none; text-decoration: underline; text-underline-offset: 5px; }
+
+/* headline: no marker pen */
+.hero-copy h1 { letter-spacing: -.03em; }
+.hero-copy mark, .public-hero mark { padding: 0; margin: 0; border-radius: 0; background: none; color: inherit; }
+
+/* buttons: plain rounded rectangles */
+.pill, .public-button { border-radius: 10px; box-shadow: none; }
+
+/* the sample card and its balances: flat fills, no arcs, no icon chips, no shadows */
+.sample { border: 1px solid var(--line); border-radius: 12px; box-shadow: none; background: var(--card); }
+a.wallet-card::before, .wallet-card::before { display: none; }
+.wallet-icon, .wallet-arrow { display: none; }
+.wallet-card { background-image: none; box-shadow: none; }
+.sample-top .chip { background: none; padding: 0; color: var(--muted); border-radius: 0; }
+.sample figcaption { box-shadow: none; }
+
+/* how it works: a numbered list, not icon-in-a-circle cards */
+.public-steps { counter-reset: step; gap: 0; border-top: 1px solid var(--ink); }
+.public-steps article { counter-increment: step; display: grid; grid-template-columns: 44px 1fr; column-gap: 16px; padding: 22px 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; box-shadow: none; }
+.public-steps .step-badge { grid-row: 1 / span 4; width: auto; height: auto; margin: 0; border-radius: 0; background: none; font-size: 0; color: var(--ink); }
+.public-steps .step-badge .icon { display: none; }
+.public-steps .step-badge::before { content: counter(step, decimal-leading-zero); font: 700 1.05rem var(--sans); color: var(--muted); }
+.public-steps h3, .public-steps p { grid-column: 2; }
+@media (min-width: 861px) { .public-steps { grid-template-columns: 1fr; } }
+
+/* about: a plain dark block */
+.public-dark, .about-panel { background: var(--ink); background-image: none; border-radius: 12px; box-shadow: none; }
+
+/* questions: ruled rows, not cards with round buttons */
+.public-faq { gap: 0; border-top: 1px solid var(--ink); }
+.public-faq details { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; box-shadow: none; }
+.public-faq summary::after { content: "+"; width: auto; height: auto; right: 0; border-radius: 0; background: none; font-size: 1.5rem; font-weight: 400; color: var(--muted); }
+.public-faq details[open] summary::after { content: "\2212"; background: none; transform: translateY(-50%); }
+
+/* closing call to action: a rule and a button, not a coloured band */
+.public-cta { background: none; background-image: none; border: 0; border-top: 1px solid var(--ink); border-radius: 0; padding-inline: 0; box-shadow: none; }
+
+/* sign-in: a quiet panel instead of a lime gradient */
+.auth-side { background: var(--page2); background-image: none; color: var(--ink); border-right: 1px solid var(--line); border-radius: 0; }
+.auth-layout { padding: 0; gap: 0; }
+.auth-card { box-shadow: none; border: 1px solid var(--line); border-radius: 12px; }
+.mini-ledger { box-shadow: none; border: 1px solid var(--line); border-radius: 12px; }
+.auth-pitch p { color: var(--ink2); }
+.repair-demo { margin-inline: 0; width: min(100%, 640px); }
+.public-faq { max-width: none; }

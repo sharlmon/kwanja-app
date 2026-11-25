@@ -65,7 +65,7 @@ a.wallet-card {
 }
 a.wallet-in { margin-inline-end: 9px; }
 a.wallet-out { margin-inline-start: 9px; }
-a.wallet-card::before {
+a.wallet-card::before { display: none;
   content: ""; position: absolute; z-index: -1; inset: -86px -36px auto auto;
   width: 184px; height: 184px; border: 1px solid currentColor; border-radius: 50%;
   opacity: .12; box-shadow: 0 0 0 14px transparent, 0 0 0 15px currentColor; pointer-events: none;
