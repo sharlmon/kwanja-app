@@ -1,6 +1,12 @@
 'use strict';
 
 const byId = (id) => document.getElementById(id);
+const language = window.KwanjaLanguage || {
+  code: 'en',
+  text: (message, values = {}) => (message ?? '').replace(/\{(\w+)\}/g, (token, name) => values[name] ?? token),
+  html: (chunks, ...values) => chunks.reduce((sum, chunk, index) => sum + chunk + (values[index] ?? ''), ''),
+};
+const { text: t, html } = language;
 const storageKey = 'kwanja-demo-ledger';
 // config.js sets window.KWANJA_API: '' = same origin as the page, 'https://api.example.com' = a separate API origin, null = offline demo.
 const apiBase = window.KWANJA_API === undefined ? '' : window.KWANJA_API;
@@ -10,15 +16,23 @@ const demoBusiness = 'Westlands Device Repair';
 const nairobiDate = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Africa/Nairobi', year: 'numeric', month: '2-digit', day: '2-digit',
 });
-const dateFormat = new Intl.DateTimeFormat('en-KE', { day: 'numeric', month: 'short' });
-const pickerDateFormat = new Intl.DateTimeFormat('en-KE', { day: 'numeric', month: 'short', year: 'numeric' });
-const pickerMonthFormat = new Intl.DateTimeFormat('en-KE', { month: 'long', year: 'numeric' });
+let dateFormat;
+let pickerDateFormat;
+let pickerMonthFormat;
+function updateDateFormats() {
+  const locale = language.code === 'sw' ? 'sw-KE' : 'en-KE';
+  dateFormat = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' });
+  pickerDateFormat = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+  pickerMonthFormat = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' });
+}
+updateDateFormats();
 const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const swahiliWeekdays = ['Jtt', 'Jnn', 'Jtn', 'Alh', 'Ijm', 'Jms', 'Jpl'];
 const numberFormat = new Intl.NumberFormat('en-KE');
 const decimalFormat = new Intl.NumberFormat('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const directions = { receivable: 'Owed to you', payable: 'You owe' };
 const entryKinds = { repair: 'Repair', device_sale: 'Device sale', parts: 'Parts', other: 'Other' };
-const pageTitles = { overview: 'Overview', ledger: 'Ledger', contacts: 'Contacts' };
+const pageTitles = { overview: 'Overview', ledger: 'Ledger', contacts: 'Contacts', settings: 'Settings' };
 const escape = (value) => String(value).replace(/[&<>"']/g, (char) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
 })[char]);
@@ -50,14 +64,17 @@ function formatAmount(cents) {
 }
 
 const money = (cents) => `KES\u00a0${formatAmount(cents)}`;
-const icon = (name) => `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+const icon = (name) => html`<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
 const paidTotal = (entry) => entry.payments.reduce((sum, payment) => sum + payment.cents, 0);
 const outstanding = (entry) => entry.cents - paidTotal(entry);
 const isOverdue = (entry) => Boolean(entry.due && entry.due < localDate() && outstanding(entry) > 0);
 const followUpDay = (entry) => entry.promised_on || entry.due || entry.pickup_on || '';
-const plural = (count, singular, pluralForm = `${singular}s`) => `${count} ${count === 1 ? singular : pluralForm}`;
-const empty = (message) => `<p class="empty">${message}</p>`;
-const emptyLedger = () => `<div class="empty-state"><span class="coin" aria-hidden="true">${icon('ledger')}</span><strong>Your ledger is empty</strong>
+const plural = (count, singular, pluralForm = `${singular}s`) => {
+  const noun = t(count === 1 ? singular : pluralForm);
+  return language.code === 'sw' ? `${noun} ${count}` : `${count} ${noun}`;
+};
+const empty = (message) => html`<p class="empty">${t(message)}</p>`;
+const emptyLedger = () => html`<div class="empty-state"><span class="coin" aria-hidden="true">${icon('ledger')}</span><strong>Your ledger is empty</strong>
   <p>Record who owes you, and who you owe. Reminders and payments come next.</p>
   <button class="button primary" type="button" data-action="new">Add your first debt</button></div>`;
 
@@ -100,7 +117,7 @@ const dialogContent = byId('dialog-content');
 
 function notify(message) {
   clearTimeout(toastTimeout);
-  byId('toast').textContent = message;
+  byId('toast').textContent = t(message);
   toastTimeout = setTimeout(() => { byId('toast').textContent = ''; }, 3400);
 }
 
@@ -147,7 +164,7 @@ async function api(path, options = {}) {
 async function loadApiLedger() {
   const status = byId('connection-status');
   status.hidden = false;
-  status.textContent = 'Loading ledger…';
+  status.textContent = t('Loading ledger…');
   document.querySelectorAll('[data-action="new"], [data-action="export"]').forEach((button) => { button.disabled = true; });
   try {
     const [business, debts] = await Promise.all(['/business', '/entries'].map(async (path) => (await api(path)).json()));
@@ -157,7 +174,7 @@ async function loadApiLedger() {
     status.hidden = true;
     document.querySelectorAll('[data-action="new"], [data-action="export"]').forEach((button) => { button.disabled = false; });
   } catch {
-    status.innerHTML = 'Could not connect to the ledger. <button class="button" type="button" data-action="retry">Try again</button>';
+    status.innerHTML = html`<span>Could not connect to the ledger.</span> <button class="button" type="button" data-action="retry">Try again</button>`;
   }
   render();
   if (status.hidden) offerWalkthrough();
@@ -190,28 +207,28 @@ async function submitToApi(form, path, payload, idempotent = true) {
 function avatar(name) {
   const initials = name.split(/\s+/).slice(0, 2).map((word) => Array.from(word)[0]).join('').toUpperCase();
   const color = [...name].reduce((sum, char) => sum + char.codePointAt(0), 0) % 4;
-  return `<span class="contact-avatar avatar-${color}" aria-hidden="true">${escape(initials)}</span>`;
+  return html`<span class="contact-avatar avatar-${color}" aria-hidden="true">${escape(initials)}</span>`;
 }
 
 function entryStatus(entry) {
-  if (!outstanding(entry)) return { text: 'Settled', color: 'paid' };
-  if (isOverdue(entry)) return { text: `Overdue · ${displayDate(entry.due)}`, color: 'overdue' };
-  if (entry.due) return { text: `Due ${displayDate(entry.due)}`, color: '' };
-  return { text: 'Open', color: '' };
+  if (!outstanding(entry)) return { text: t('Settled'), color: 'paid' };
+  if (isOverdue(entry)) return { text: `${t('Overdue')} · ${displayDate(entry.due)}`, color: 'overdue' };
+  if (entry.due) return { text: t('Due {date}', { date: displayDate(entry.due) }), color: '' };
+  return { text: t('Open'), color: '' };
 }
 
 function entryDescription(entry) {
-  return [entryKinds[entry.kind], entry.job_reference, entry.note].filter(Boolean).join(' · ') || directions[entry.direction];
+  return [t(entryKinds[entry.kind]), entry.job_reference, entry.note].filter(Boolean).join(' · ') || t(directions[entry.direction]);
 }
 
 const signed = (entry) => (!outstanding(entry) ? money(entry.cents) : `${entry.direction === 'payable' ? '\u2212' : '+'}${money(outstanding(entry))}`);
 
 function entryRow(entry, compact = false) {
   const status = entryStatus(entry);
-  return `<button class="entry-row${compact === true ? ' compact' : ''}" type="button" data-action="detail" data-direction="${entry.direction}" data-settled="${!outstanding(entry)}" data-entry="${escape(entry.id)}">
+  return html`<button class="entry-row${compact === true ? ' compact' : ''}" type="button" data-action="detail" data-direction="${entry.direction}" data-settled="${!outstanding(entry)}" data-entry="${escape(entry.id)}">
     ${compact === true ? '' : avatar(entry.contact)}
-    <span class="row-main"><strong>${escape(compact === true ? entryDescription(entry) : entry.contact)}</strong><small>${compact === true ? `${directions[entry.direction]} · added ${displayDate(entry.date)}` : escape(entryDescription(entry))}</small></span>
-    <span class="row-side"><strong class="row-amount"><span class="sr-only">${directions[entry.direction]}, </span>${signed(entry)}</strong>
+    <span class="row-main"><strong>${escape(compact === true ? entryDescription(entry) : entry.contact)}</strong><small>${compact === true ? `${t(directions[entry.direction])} · ${t('added')} ${displayDate(entry.date)}` : escape(entryDescription(entry))}</small></span>
+    <span class="row-side"><strong class="row-amount"><span class="sr-only">${t(directions[entry.direction])}, </span>${signed(entry)}</strong>
     <small class="row-status ${status.color}">${status.text}</small></span>
   </button>`;
 }
@@ -219,10 +236,10 @@ function entryRow(entry, compact = false) {
 function entryCard(entry) {
   const status = entryStatus(entry);
   const settled = !outstanding(entry);
-  return `<button class="debt-card ${settled ? 'settled' : entry.direction}" type="button" data-action="detail" data-direction="${entry.direction}" data-entry="${escape(entry.id)}">
+  return html`<button class="debt-card ${settled ? 'settled' : entry.direction}" type="button" data-action="detail" data-direction="${entry.direction}" data-entry="${escape(entry.id)}">
     <span class="dc-top"><strong class="dc-name">${escape(entry.contact)}</strong><span class="dc-chip ${status.color}">${status.text}</span></span>
-    <span class="dc-amount"><span class="sr-only">${directions[entry.direction]}, </span>${money(settled ? entry.cents : outstanding(entry))}</span>
-    <span class="dc-foot"><span>${escape(entryDescription(entry))}</span><span>${directions[entry.direction]}</span></span>
+    <span class="dc-amount"><span class="sr-only">${t(directions[entry.direction])}, </span>${money(settled ? entry.cents : outstanding(entry))}</span>
+    <span class="dc-foot"><span>${escape(entryDescription(entry))}</span><span>${t(directions[entry.direction])}</span></span>
     <span class="dc-mark" aria-hidden="true">Kwanja</span>
   </button>`;
 }
@@ -242,12 +259,12 @@ function renderFollowUp(due, today) {
     ['Due today', due.filter((entry) => followUpDay(entry) === today)],
   ];
   byId('follow-all').hidden = !due.length;
-  return groups.filter(([, group]) => group.length).map(([title, group]) => `<div class="follow-group"><h3>${title} <span>${group.length}</span></h3>
-    ${group.slice(0, 4).map((entry) => `<div class="follow-item"><button class="follow-record" type="button" data-action="detail" data-entry="${escape(entry.id)}">
+  return groups.filter(([, group]) => group.length).map(([title, group]) => html`<div class="follow-group"><h3>${t(title)} <span>${group.length}</span></h3>
+    ${group.slice(0, 4).map((entry) => html`<div class="follow-item"><button class="follow-record" type="button" data-action="detail" data-entry="${escape(entry.id)}">
       <strong>${escape(entry.contact)}</strong><small>${escape(entryDescription(entry))}</small>
-      ${entry.last_follow_up ? `<small>Last contacted ${displayDate(entry.last_follow_up)}</small>` : ''}
+      ${entry.last_follow_up ? html`<small>${t('Last contacted')} ${displayDate(entry.last_follow_up)}</small>` : ''}
       <span class="row-amount">${money(outstanding(entry))}</span>
-    </button><button class="round" type="button" data-action="remind" data-entry="${escape(entry.id)}" aria-label="Open WhatsApp draft for ${escape(entry.contact)}">${icon('whatsapp')}</button></div>`).join('')}
+    </button><button class="round" type="button" data-action="remind" data-entry="${escape(entry.id)}" aria-label="${escape(t('Open WhatsApp draft for {contact}', { contact: entry.contact }))}">${icon('whatsapp')}</button></div>`).join('')}
     </div>`).join('') || empty('No customer balances need follow-up today.');
 }
 
@@ -267,7 +284,7 @@ function renderOverview() {
   byId('net-amount').textContent = walletLayout ? money(receiveTotal - payTotal) : formatAmount(receiveTotal - payTotal);
   const overdueChip = byId('overdue-chip');
   overdueChip.hidden = !overdueTotal;
-  overdueChip.innerHTML = overdueTotal ? `<b>${money(overdueTotal)}</b> overdue` : '';
+  overdueChip.innerHTML = overdueTotal ? t('{amount} overdue', { amount: `<b>${money(overdueTotal)}</b>` }) : '';
   byId('receivable-total').textContent = walletLayout ? formatAmount(receiveTotal) : money(receiveTotal);
   byId('payable-total').textContent = walletLayout ? formatAmount(payTotal) : money(payTotal);
   byId('receivable-count').textContent = plural(receivable.length, 'open debt');
@@ -277,20 +294,20 @@ function renderOverview() {
   byId('recent-section').hidden = !entries.length;
   byId('legacy-follow-add').hidden = workshopLedger;
   const first = queue[0];
-  const bannerTitle = workshopLedger ? `${plural(queue.length, 'balance')} to follow up` : `${plural(overdue.length, 'debt')} overdue`;
-  const bannerDetail = workshopLedger ? `Start with ${first?.contact || ''}.` : `${money(overdueTotal)} is past due. Start with ${first?.contact || ''}.`;
+  const bannerTitle = workshopLedger ? plural(queue.length, 'balance to follow up', 'balances to follow up') : `${plural(overdue.length, 'debt')} · ${t('Overdue')}`;
+  const bannerDetail = workshopLedger ? t('Start with {contact}.', { contact: first?.contact || '' }) : t('{amount} is past due. Start with {contact}.', { amount: money(overdueTotal), contact: first?.contact || '' });
   byId('banner').innerHTML = !entries.length
-    ? `<div class="banner-copy"><strong>Start your ledger</strong><p>Record a repair deposit, a device sale on credit, or a parts bill.</p></div><button class="coin" type="button" data-action="new" aria-label="Add your first debt">${icon('plus')}</button>`
+    ? html`<div class="banner-copy"><strong>Start your ledger</strong><p>Record a repair deposit, a device sale on credit, or a parts bill.</p></div><button class="coin" type="button" data-action="new" aria-label="Add your first debt">${icon('plus')}</button>`
     : first
-    ? `<div class="banner-copy"><strong>${bannerTitle}</strong><p>${escape(bannerDetail)}</p></div>
-       <button class="coin" type="button" data-action="remind" data-entry="${escape(first.id)}" aria-label="Open WhatsApp draft for ${escape(first.contact)}">${icon('whatsapp')}</button>`
-    : `<div class="banner-copy"><strong>All caught up</strong><p>${workshopLedger ? 'No customer balances need follow-up today.' : 'Nobody owes you past their due date.'}</p></div><span class="coin" aria-hidden="true">${icon('check')}</span>`;
+    ? html`<div class="banner-copy"><strong>${bannerTitle}</strong><p>${escape(bannerDetail)}</p></div>
+       <button class="coin" type="button" data-action="remind" data-entry="${escape(first.id)}" aria-label="${escape(t('Open WhatsApp draft for {contact}', { contact: first.contact }))}">${icon('whatsapp')}</button>`
+    : html`<div class="banner-copy"><strong>All caught up</strong><p>${t(workshopLedger ? 'No customer balances need follow-up today.' : 'Nobody owes you past their due date.')}</p></div><span class="coin" aria-hidden="true">${icon('check')}</span>`;
 
   const chase = [...open].sort((a, b) => Number(isOverdue(b)) - Number(isOverdue(a)) || (a.due || '9').localeCompare(b.due || '9')).slice(0, 8);
   const followList = byId('follow-list');
   followList.classList.toggle('chase-row', !workshopLedger);
   followList.classList.toggle('workshop-follow-list', workshopLedger);
-  followList.innerHTML = workshopLedger ? renderFollowUp(queue, today) : chase.map((entry) => `<button class="chase" type="button" data-action="detail" data-entry="${escape(entry.id)}" data-direction="${entry.direction}">
+  followList.innerHTML = workshopLedger ? renderFollowUp(queue, today) : chase.map((entry) => html`<button class="chase" type="button" data-action="detail" data-entry="${escape(entry.id)}" data-direction="${entry.direction}">
     <span class="chase-face">${avatar(entry.contact)}<span class="chase-badge ${entry.direction}" aria-hidden="true">${icon(entry.direction === 'receivable' ? 'in' : 'out')}</span></span>
     <span class="chase-name">${escape(entry.contact.split(/\s+/)[0])}</span></button>`).join('') || empty('Nothing open yet.');
   byId('recent-list').innerHTML = sortedEntries().slice(0, 4).map(entryRow).join('') || empty('Nothing here yet.');
@@ -299,7 +316,11 @@ function renderOverview() {
 function route() {
   const [page, filter] = location.hash.slice(1).split('/');
   const selectedFilter = ['receivable', 'payable', 'paid'].includes(filter) || (filter === 'followup' && workshopLedger) ? filter : 'all';
-  return { page: Object.hasOwn(pageTitles, page) ? page : 'overview', filter: selectedFilter };
+  return { page: Object.hasOwn(pageTitles, page) && byId(`${page}-view`) ? page : 'overview', filter: selectedFilter };
+}
+
+function isWorkspaceRoute() {
+  return Object.hasOwn(pageTitles, location.hash.slice(1).split('/')[0]);
 }
 
 const searchText = (value) => value.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
@@ -333,10 +354,10 @@ function renderLedger() {
 
   const owedTo = rows.filter((entry) => entry.direction === 'receivable').reduce((sum, entry) => sum + outstanding(entry), 0);
   const owe = rows.filter((entry) => entry.direction === 'payable').reduce((sum, entry) => sum + outstanding(entry), 0);
-  byId('ledger-sub').textContent = [query ? plural(rows.length, 'match', 'matches') : plural(rows.length, 'entry', 'entries'), owedTo ? `${money(owedTo)} owed to you` : '', owe ? `${money(owe)} you owe` : ''].filter(Boolean).join(' · ');
+  byId('ledger-sub').textContent = [query ? plural(rows.length, 'match', 'matches') : plural(rows.length, 'entry', 'entries'), owedTo ? t('{amount} owed to you', { amount: money(owedTo) }) : '', owe ? t('{amount} you owe', { amount: money(owe) }) : ''].filter(Boolean).join(' · ');
   const list = byId('ledger-list');
   if (rows.length && query) {
-    list.innerHTML = `<div class="search-results">${rows.map((entry) => entryRow(entry)).join('')}</div>`;
+    list.innerHTML = html`<div class="search-results">${rows.map((entry) => entryRow(entry)).join('')}</div>`;
   } else {
     list.innerHTML = rows.map(entryCard).join('') || (entries.length
       ? empty(query ? (filter === 'all' ? 'No entries match your search.' : 'No matches in this filter. Choose All to search the full ledger.') : 'No entries in this view.')
@@ -358,9 +379,9 @@ function renderContacts() {
       const net = contactEntries.reduce((sum, entry) => sum + (entry.direction === 'payable' ? -outstanding(entry) : outstanding(entry)), 0);
       const open = contactEntries.filter((entry) => outstanding(entry) > 0).length;
       const tone = net > 0 ? 'receivable' : net < 0 ? 'payable' : 'settled';
-      const amount = net === 0 ? (open ? money(0) : 'Settled') : `${net > 0 ? '+' : '\u2212'}${money(Math.abs(net))}`;
-      return `<section class="contact-group"><header class="cg-head">${avatar(contactEntries[0].contact)}
-        <span class="row-main"><h2>${escape(contactEntries[0].contact)}</h2><small>${open ? plural(open, 'open entry', 'open entries') : 'All settled'}</small></span>
+      const amount = net === 0 ? (open ? money(0) : t('Settled')) : `${net > 0 ? '+' : '\u2212'}${money(Math.abs(net))}`;
+      return html`<section class="contact-group"><header class="cg-head">${avatar(contactEntries[0].contact)}
+        <span class="row-main"><h2>${escape(contactEntries[0].contact)}</h2><small>${open ? plural(open, 'open entry', 'open entries') : t('All settled')}</small></span>
         <strong class="cg-net ${tone}">${amount}</strong></header>
         ${contactEntries.map((entry) => entryRow(entry, true)).join('')}</section>`;
     })
@@ -369,7 +390,12 @@ function renderContacts() {
 
 function render() {
   const { page } = route();
-  for (const name of Object.keys(pageTitles)) byId(`${name}-view`).hidden = !apiReady || name !== page;
+  for (const name of Object.keys(pageTitles)) {
+    const view = byId(`${name}-view`);
+    if (view) view.hidden = !apiReady || name !== page;
+  }
+  const overviewPrivacy = byId('overview-privacy');
+  if (overviewPrivacy) overviewPrivacy.hidden = !apiReady || page !== 'overview';
   document.querySelectorAll('[data-nav]').forEach((link) => {
     if (link.dataset.nav === page) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
@@ -379,8 +405,8 @@ function render() {
   byId('account').querySelector('[data-action="account-security"]').hidden = !passwordAuthEnabled();
   byId('follow-filter').hidden = !workshopLedger;
   byId('import-entry').hidden = !apiMode || !workshopLedger;
-  byId('page-title').textContent = pageTitles[page];
-  byId('page-context').textContent = page === 'overview' && authMode !== 'clerk' ? `${businessName} · Demo workspace` : businessName;
+  byId('page-title').textContent = t(pageTitles[page]);
+  byId('page-context').textContent = page === 'overview' && authMode !== 'clerk' ? `${businessName} · ${t('Demo workspace')}` : businessName;
   if (page === 'overview') renderOverview();
   if (page === 'ledger') renderLedger();
   if (page === 'contacts') renderContacts();
@@ -421,19 +447,19 @@ function offerWalkthrough() {
 function showWalkthrough(index = 0) {
   const [title, symbol, copy] = walkthroughSteps[index];
   const last = index === walkthroughSteps.length - 1;
-  let description = copy;
-  if (workshopLedger && index === 0) description += ' For a repair, you can include the job reference, deposit and pickup date.';
-  if (!workshopLedger && last) description = 'Open a customer’s unpaid entry and choose WhatsApp reminder. Review the amount and message before sending it.';
-  showDialog(title, `<div class="walkthrough" data-walkthrough-step="${index}">
+  let description = t(copy);
+  if (workshopLedger && index === 0) description += ' ' + t('For a repair, you can include the job reference, deposit and pickup date.');
+  if (!workshopLedger && last) description = t('Open a customer’s unpaid entry and choose WhatsApp reminder. Review the amount and message before sending it.');
+  showDialog(t(title), html`<div class="walkthrough" data-walkthrough-step="${index}">
     <div class="walkthrough-card">
       <span class="walkthrough-icon">${icon(symbol)}</span>
-      <div><p class="walkthrough-count">Step ${index + 1} of ${walkthroughSteps.length}</p><p>${description}</p></div>
+      <div><p class="walkthrough-count">${t('Step {step} of {total}', { step: index + 1, total: walkthroughSteps.length })}</p><p>${description}</p></div>
     </div>
     <div class="walkthrough-actions">
-      <button class="link" type="button" data-action="close">${last ? 'Done' : 'Skip walkthrough'}</button>
+      <button class="link" type="button" data-action="close">${t(last ? 'Done' : 'Skip walkthrough')}</button>
       <div>
-        ${index ? '<button class="button" type="button" data-action="walkthrough-back">Back</button>' : ''}
-        <button class="button primary" type="button" data-action="${last ? 'walkthrough-add' : 'walkthrough-next'}">${last ? 'Add a debt' : 'Next'}</button>
+        ${index ? html`<button class="button" type="button" data-action="walkthrough-back">Back</button>` : ''}
+        <button class="button primary" type="button" data-action="${last ? 'walkthrough-add' : 'walkthrough-next'}">${t(last ? 'Add a debt' : 'Next')}</button>
       </div>
     </div>
   </div>`);
@@ -447,21 +473,21 @@ function rememberWalkthrough() {
 }
 
 function field(label, control, help = '') {
-  return `<label class="field"><span>${label}</span>${control}${help ? `<small>${help}</small>` : ''}</label>`;
+  return html`<label class="field"><span>${t(label)}</span>${control}${help ? html`<small>${t(help)}</small>` : ''}</label>`;
 }
 
 function dateField(label, name, value = '', help = '') {
-  return `<div class="field date-field">
-    <span id="date-label-${name}">${label}</span>
+  return html`<div class="field date-field">
+    <span id="date-label-${name}">${t(label)}</span>
     <input type="hidden" name="${name}" value="${escape(value)}">
     <details class="date-picker">
       <summary aria-labelledby="date-label-${name} date-value-${name}" ${help ? `aria-describedby="date-help-${name}"` : ''}>
-        <span id="date-value-${name}" class="date-value" data-empty="${!value}">${value ? pickerDateFormat.format(new Date(`${value}T00:00:00`)) : 'Choose a date'}</span>
+        <span id="date-value-${name}" class="date-value" data-empty="${!value}">${value ? pickerDateFormat.format(new Date(`${value}T00:00:00`)) : t('Choose a date')}</span>
         <svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg>
       </summary>
       <div class="date-panel"></div>
     </details>
-    ${help ? `<small id="date-help-${name}">${help}</small>` : ''}
+    ${help ? html`<small id="date-help-${name}">${t(help)}</small>` : ''}
   </div>`;
 }
 
@@ -476,19 +502,19 @@ function renderCalendar(picker, date, focusDay = false) {
   last.setMonth(month + 1, 0);
   const offset = (first.getDay() + 6) % 7;
   const panel = picker.querySelector('.date-panel');
-  panel.innerHTML = `<div class="date-heading">
+  panel.innerHTML = html`<div class="date-heading">
     <button type="button" data-month="-1" aria-label="Previous month"${year === 1 && month === 0 ? ' disabled' : ''}><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
     <strong aria-live="polite">${pickerMonthFormat.format(date)}</strong>
     <button type="button" data-month="1" aria-label="Next month"${year === 9999 && month === 11 ? ' disabled' : ''}><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
   </div>
   <div class="date-days">
-    ${weekdays.map((day) => `<abbr title="${day}">${day.slice(0, 2)}</abbr>`).join('')}
+    ${weekdays.map((day, index) => html`<abbr title="${t(day)}">${language.code === 'sw' ? swahiliWeekdays[index] : day.slice(0, 2)}</abbr>`).join('')}
     ${'<span aria-hidden="true"></span>'.repeat(offset)}
     ${Array.from({ length: last.getDate() }, (_, index) => {
       const day = new Date(first);
       day.setDate(index + 1);
       const value = localDate(day);
-      return `<button type="button" data-day="${value}" aria-label="${pickerDateFormat.format(day)}" aria-pressed="${selected === value}"${value === today ? ' aria-current="date"' : ''} tabindex="${day.getDate() === date.getDate() ? 0 : -1}">${day.getDate()}</button>`;
+      return html`<button type="button" data-day="${value}" aria-label="${pickerDateFormat.format(day)}" aria-pressed="${selected === value}"${value === today ? ' aria-current="date"' : ''} tabindex="${day.getDate() === date.getDate() ? 0 : -1}">${day.getDate()}</button>`;
     }).join('')}
   </div>
   <div class="date-actions">
@@ -501,7 +527,7 @@ function renderCalendar(picker, date, focusDay = false) {
 function selectCalendarDate(picker, value) {
   picker.previousElementSibling.value = value;
   const label = picker.querySelector('.date-value');
-  label.textContent = value ? pickerDateFormat.format(new Date(`${value}T00:00:00`)) : 'Choose a date';
+  label.textContent = value ? pickerDateFormat.format(new Date(`${value}T00:00:00`)) : t('Choose a date');
   label.dataset.empty = String(!value);
   picker.open = false;
   picker.querySelector('summary').focus();
@@ -510,25 +536,25 @@ function selectCalendarDate(picker, value) {
 function showNew(previous = null) {
   const names = [...new Set(entries.map((entry) => entry.contact))];
   const payable = previous?.direction === 'payable';
-  showDialog('Add debt', `<form class="form" data-form="new">
+  showDialog(t('Add debt'), html`<form class="form" data-form="new">
     <div class="segment" role="radiogroup" aria-label="Direction">
       <label><input type="radio" name="direction" value="receivable"${payable ? '' : ' checked'}><span>Owed to you</span></label>
       <label><input type="radio" name="direction" value="payable"${payable ? ' checked' : ''}><span>You owe</span></label>
     </div>
     ${field('Contact', previous
-      ? `<input name="contact" value="${escape(previous.contact)}" readonly>`
-      : '<input name="contact" maxlength="80" list="contact-names" placeholder="Customer or supplier name" required>')}
-    <datalist id="contact-names">${names.map((name) => `<option value="${escape(name)}"></option>`).join('')}</datalist>
-    ${field('Total amount (KES)', '<input class="big" name="amount" type="number" inputmode="decimal" min="0.01" max="1000000000" step="0.01" placeholder="0" required>')}
-    ${workshopLedger ? `<div class="field-grid">
-      ${field('Job or sale type', `<select name="kind"><option value="">Choose a type</option>${Object.entries(entryKinds).map(([key, label]) => `<option value="${key}">${label}</option>`).join('')}</select>`)}
-      ${field('Reference (optional)', '<input name="job_reference" maxlength="40" placeholder="e.g. WS-014">')}
+      ? html`<input name="contact" value="${escape(previous.contact)}" readonly>`
+      : html`<input name="contact" maxlength="80" list="contact-names" placeholder="Customer or supplier name" required>`)}
+    <datalist id="contact-names">${names.map((name) => html`<option value="${escape(name)}"></option>`).join('')}</datalist>
+    ${field('Total amount (KES)', html`<input class="big" name="amount" type="number" inputmode="decimal" min="0.01" max="1000000000" step="0.01" placeholder="0" required>`)}
+    ${workshopLedger ? html`<div class="field-grid">
+      ${field('Job or sale type', html`<select name="kind"><option value="">Choose a type</option>${Object.entries(entryKinds).map(([key, label]) => html`<option value="${key}">${t(label)}</option>`).join('')}</select>`)}
+      ${field('Reference (optional)', html`<input name="job_reference" maxlength="40" placeholder="e.g. WS-014">`)}
     </div>
     <label class="field"${payable ? ' hidden' : ''}><span>Customer deposit already paid (optional)</span><input name="deposit" type="number" min="0" max="1000000000" step="0.01" inputmode="decimal" placeholder="KES"${payable ? ' disabled' : ''}></label>
     ${dateField('Pickup date (optional)', 'pickup_on')}
-    ${field('Contact’s mobile number (optional)', `<input name="phone" type="tel" inputmode="tel" maxlength="24" placeholder="07XX XXX XXX" value="${escape(previous?.phone || '')}">`)}` : ''}
+    ${field('Contact’s mobile number (optional)', html`<input name="phone" type="tel" inputmode="tel" maxlength="24" placeholder="07XX XXX XXX" value="${escape(previous?.phone || '')}">`)}` : ''}
     ${dateField('Payment due date (optional)', 'due')}
-    ${field('Note (optional)', '<input name="note" maxlength="120" placeholder="e.g. Screen replacement">')}
+    ${field('Note (optional)', html`<input name="note" maxlength="120" placeholder="e.g. Screen replacement">`)}
     <p class="form-error" role="alert" hidden></p>
     <div class="form-actions"><button class="button primary" type="submit">Save debt</button></div>
   </form>`, previous ? '[name=amount]' : '[name=contact]');
@@ -538,12 +564,12 @@ function showDetail(entry) {
   activeEntry = entry;
   const balance = outstanding(entry);
   const status = entryStatus(entry);
-  const actions = balance > 0 ? `<div class="detail-actions">
+  const actions = balance > 0 ? html`<div class="detail-actions">
     <button class="button primary" type="button" data-action="payment">Record payment</button>
-    ${entry.direction === 'receivable' ? `<button class="button" type="button" data-action="reminder">${icon('whatsapp').replace('class="icon"', 'class="icon wa"')} WhatsApp reminder</button>` : ''}
+    ${entry.direction === 'receivable' ? html`<button class="button" type="button" data-action="reminder">${icon('whatsapp').replace('class="icon"', 'class="icon wa"')} ${t('WhatsApp reminder')}</button>` : ''}
   </div>` : '';
-  const history = [...entry.payments].reverse().map((payment) => `<li>
-    <span>${displayDate(payment.date)}${payment.is_deposit ? ' · Deposit' : ''}${payment.reference ? ` · ${escape(payment.reference)}` : ''}</span><strong>${money(payment.cents)}</strong>
+  const history = [...entry.payments].reverse().map((payment) => html`<li>
+    <span>${displayDate(payment.date)}${payment.is_deposit ? ` · ${t('Deposit')}` : ''}${payment.reference ? ` · ${escape(payment.reference)}` : ''}</span><strong>${money(payment.cents)}</strong>
   </li>`).join('');
   const deposit = entry.payments.find((payment) => payment.is_deposit);
   const details = [
@@ -552,16 +578,16 @@ function showDetail(entry) {
     entry.promised_on && ['Promised payment', displayDate(entry.promised_on)],
     entry.last_follow_up && ['Last contacted', displayDate(entry.last_follow_up)],
   ].filter(Boolean);
-  showDialog(entry.contact, `<div class="detail-summary ${balance ? entry.direction : 'settled'}"><p>${directions[entry.direction]} · ${status.text}</p>
-    <strong class="detail-amount">${money(balance)}</strong><p>Original amount ${money(entry.cents)}${deposit ? ` · Deposit ${money(deposit.cents)}` : ''}</p></div>
-    <p class="detail-meta">Added ${displayDate(entry.date)} · ${escape(entryDescription(entry))}</p>
-    ${details.length ? `<dl class="workshop-meta">${details.map(([label, value]) => `<div><dt>${label}</dt><dd>${escape(value)}</dd></div>`).join('')}</dl>` : ''}
+  showDialog(entry.contact, html`<div class="detail-summary ${balance ? entry.direction : 'settled'}"><p>${t(directions[entry.direction])} · ${status.text}</p>
+    <strong class="detail-amount">${money(balance)}</strong><p>${t('Original amount')} ${money(entry.cents)}${deposit ? ` · ${t('Deposit')} ${money(deposit.cents)}` : ''}</p></div>
+    <p class="detail-meta">${t('Added')} ${displayDate(entry.date)} · ${escape(entryDescription(entry))}</p>
+    ${details.length ? html`<dl class="workshop-meta">${details.map(([label, value]) => html`<div><dt>${t(label)}</dt><dd>${escape(value)}</dd></div>`).join('')}</dl>` : ''}
     ${actions}
     <div class="detail-tools">
-      ${workshopLedger ? `<button class="link workshop-details" type="button" data-action="follow-up">${entry.direction === 'receivable' ? 'Follow-up details' : 'Contact number'}</button>` : ''}
+      ${workshopLedger ? html`<button class="link workshop-details" type="button" data-action="follow-up">${t(entry.direction === 'receivable' ? 'Follow-up details' : 'Contact number')}</button>` : ''}
       <button class="link workshop-details" type="button" data-action="repeat-entry">New entry for this contact</button>
     </div>
-    <section class="detail-history"><h3>Payment history</h3>${history ? `<ul>${history}</ul>` : '<p class="help">No payments recorded yet.</p>'}</section>`);
+    <section class="detail-history"><h3>Payment history</h3>${history ? html`<ul>${history}</ul>` : html`<p class="help">No payments recorded yet.</p>`}</section>`);
 }
 
 const digitsLabel = (value) => {
@@ -591,13 +617,13 @@ function showPayment(amount = '', reference = '') {
   const entry = activeEntry;
   const remaining = outstanding(entry);
   const chips = [['Full', remaining], ['Half', Math.round(remaining / 2)], ['1,000', 100000], ['500', 50000]].filter(([, cents]) => cents > 0 && cents <= remaining);
-  showDialog('Record payment', `<form class="form pay" data-form="payment">
-    <div class="pay-to">${avatar(entry.contact)}<span><strong>${escape(entry.contact)}</strong><small>${directions[entry.direction]} · ${money(remaining)} remaining</small></span></div>
+  showDialog(t('Record payment'), html`<form class="form pay" data-form="payment">
+    <div class="pay-to">${avatar(entry.contact)}<span><strong>${escape(entry.contact)}</strong><small>${t(directions[entry.direction])} · ${t('{amount} remaining', { amount: money(remaining) })}</small></span></div>
     <input type="hidden" name="amount" value="${escape(String(amount))}">
     <output class="pay-amount${amount ? '' : ' empty-amount'}" aria-live="polite"><span>KES</span><b>${digitsLabel(amount)}</b></output>
-    <div class="chips">${chips.map(([label, cents]) => `<button type="button" data-action="chip" data-amount="${cents / 100}">${label}</button>`).join('')}</div>
-    <div class="numpad">${['1', '2', '3', '4', '5', '6', '7', '8', '9', '000', '0'].map((key) => `<button type="button" data-action="key" data-key="${key}">${key}</button>`).join('')}<button type="button" data-action="key" data-key="del" aria-label="Delete last digit"><svg class="icon"><use href="#i-back"/></svg></button></div>
-    <details class="ref"><summary>Add M-Pesa reference</summary>${field('Reference', `<input name="reference" maxlength="40" value="${escape(reference)}" placeholder="e.g. confirmation code">`)}</details>
+    <div class="chips">${chips.map(([label, cents]) => html`<button type="button" data-action="chip" data-amount="${cents / 100}">${t(label)}</button>`).join('')}</div>
+    <div class="numpad">${['1', '2', '3', '4', '5', '6', '7', '8', '9', '000', '0'].map((key) => html`<button type="button" data-action="key" data-key="${key}">${key}</button>`).join('')}<button type="button" data-action="key" data-key="del" aria-label="Delete last digit"><svg class="icon"><use href="#i-back"/></svg></button></div>
+    <details class="ref"><summary>Add M-Pesa reference</summary>${field('Reference', html`<input name="reference" maxlength="40" value="${escape(reference)}" placeholder="e.g. confirmation code">`)}</details>
     <p class="form-error" role="alert" hidden></p>
     <div class="form-actions"><button class="button primary" type="submit">Record payment</button>
     <div class="pair"><button class="button" type="button" data-action="sms"><img class="brand-mark" src="brands/mpesa.svg" alt="">Paste M-Pesa SMS</button>
@@ -606,8 +632,8 @@ function showPayment(amount = '', reference = '') {
 }
 
 function showSms() {
-  showDialog('Paste M-Pesa SMS', `<form class="form" data-form="sms">
-    ${field('Confirmation message', '<textarea name="sms" rows="4" maxlength="1500" required></textarea>', 'Review the amount before saving. Kwanja saves the payment details only.')}
+  showDialog(t('Paste M-Pesa SMS'), html`<form class="form" data-form="sms">
+    ${field('Confirmation message', html`<textarea name="sms" rows="4" maxlength="1500" required></textarea>`, 'Review the amount before saving. Kwanja saves the payment details only.')}
     <p class="form-error" role="alert" hidden></p>
     <div class="form-actions"><button class="button primary" type="submit">Review payment</button>
     <button class="button" type="button" data-action="payment">Back</button></div>
@@ -615,8 +641,13 @@ function showSms() {
 }
 
 function reminderMessage(entry, business) {
-  const job = entry.job_reference ? ` for ${entry.kind === 'repair' ? 'repair ' : ''}${entry.job_reference}` : '';
   const date = entry.promised_on || entry.due;
+  if (language.code === 'sw') {
+    const job = entry.job_reference ? ` ya ${entry.kind === 'repair' ? 'ukarabati' : 'kazi'} ${entry.job_reference}` : '';
+    const due = date ? ` Tarehe ${date < localDate() ? 'ya mwisho ya malipo ilikuwa' : 'ya mwisho ya malipo ni'} ${displayDate(date)}.` : '';
+    return `Habari ${entry.contact}, salio lako${job} kwa ${business} ni ${money(outstanding(entry))}.${due} Tafadhali tujulishe lini unaweza kulipa. Asante!`;
+  }
+  const job = entry.job_reference ? ` for ${entry.kind === 'repair' ? 'repair ' : ''}${entry.job_reference}` : '';
   const due = date ? ` Payment ${date < localDate() ? 'was' : 'is'} due ${displayDate(date)}.` : '';
   return `Hi ${entry.contact}, your balance${job} with ${business} is ${money(outstanding(entry))}.${due} Please let us know when you can pay. Thank you!`;
 }
@@ -624,13 +655,13 @@ function reminderMessage(entry, business) {
 function showReminder() {
   const entry = activeEntry;
   const message = reminderMessage(entry, businessName);
-  showDialog('WhatsApp reminder', `<form class="form" data-form="reminder">
-    ${field('Kenyan mobile number', `<input type="tel" name="phone" placeholder="e.g. 07XX XXX XXX" maxlength="24" value="${escape(entry.phone || '')}" required>`, 'WhatsApp opens with a draft for you to review and send.')}
-    ${field('Message', `<textarea name="message" rows="5" maxlength="700" required>${escape(message)}</textarea>`)}
+  showDialog(t('WhatsApp reminder'), html`<form class="form" data-form="reminder">
+    ${field('Kenyan mobile number', html`<input type="tel" name="phone" placeholder="e.g. 07XX XXX XXX" maxlength="24" value="${escape(entry.phone || '')}" required>`, 'WhatsApp opens with a draft for you to review and send.')}
+    ${field('Message', html`<textarea name="message" rows="5" maxlength="700" required>${escape(message)}</textarea>`)}
     <p class="form-error" role="alert" hidden></p>
     <div class="form-actions"><button class="button primary" type="submit">Open WhatsApp</button>
     <button class="button" type="button" data-action="copy">Copy message</button>
-    ${workshopLedger ? '<button class="button" type="button" data-action="follow-up">Follow-up details</button>' : ''}
+    ${workshopLedger ? html`<button class="button" type="button" data-action="follow-up">Follow-up details</button>` : ''}
     <button class="button" type="button" data-action="back">Back</button></div>
   </form>`, '[name=phone]');
 }
@@ -638,8 +669,8 @@ function showReminder() {
 function showFollowUp() {
   const entry = activeEntry;
   const customer = entry.direction === 'receivable';
-  showDialog(customer ? 'Follow-up details' : 'Contact number', `<form class="form" data-form="follow-up">
-    ${field('Saved mobile number', `<input name="phone" type="tel" maxlength="24" placeholder="07XX XXX XXX" value="${escape(entry.phone || '')}">`, 'Used in future WhatsApp drafts for this contact.')}
+  showDialog(t(customer ? 'Follow-up details' : 'Contact number'), html`<form class="form" data-form="follow-up">
+    ${field('Saved mobile number', html`<input name="phone" type="tel" maxlength="24" placeholder="07XX XXX XXX" value="${escape(entry.phone || '')}">`, 'Used in future WhatsApp drafts for this contact.')}
     ${customer ? `${dateField('Promised payment date', 'promised_on', entry.promised_on || '', 'A promise date schedules the next follow-up. The original payment due date stays on the entry.')}
     <label class="workshop-check"><input name="contacted" type="checkbox">I contacted this customer today</label>` : ''}
     <p class="form-error" role="alert" hidden></p>
@@ -649,7 +680,8 @@ function showFollowUp() {
 
 function showError(form, message) {
   const error = form.querySelector('.form-error');
-  error.textContent = message;
+  error.dataset.message = message || '';
+  error.textContent = t(message);
   error.classList.remove('success');
   error.hidden = false;
 }
@@ -789,7 +821,7 @@ function submitReminder(form, values) {
 }
 
 function renderRepairDemo() {
-  byId('repair-demo-balance').textContent = `Balance ${money(outstanding(guidedRepair))}`;
+  byId('repair-demo-balance').textContent = t('Balance {amount}', { amount: money(outstanding(guidedRepair)) });
   const paid = guidedRepair.payments.length > 1;
   document.querySelector('[data-action="repair-demo-payment"]').disabled = paid;
   document.querySelector('[data-action="repair-demo-reset"]').hidden = !paid && byId('repair-demo-reminder').hidden;
@@ -797,11 +829,11 @@ function renderRepairDemo() {
 }
 
 function showImport(csv = '') {
-  showDialog('Import CSV', `<form class="form" data-form="import-preview">
+  showDialog(t('Import CSV'), html`<form class="form" data-form="import-preview">
     <p class="help">Preview up to 200 rows. Kwanja flags invalid amounts, dates and possible duplicates before adding entries.</p>
     <button class="link" type="button" data-action="import-template">Download the CSV template</button>
-    ${field('CSV file', '<input name="file" type="file" accept=".csv,text/csv">')}
-    ${field('Or paste CSV rows', `<textarea name="csv" rows="6" maxlength="120000" placeholder="contact,direction,amount_kes">${escape(csv)}</textarea>`)}
+    ${field('CSV file', html`<input name="file" type="file" accept=".csv,text/csv">`)}
+    ${field('Or paste CSV rows', html`<textarea name="csv" rows="6" maxlength="120000" placeholder="contact,direction,amount_kes">${escape(csv)}</textarea>`)}
     <p class="form-error" role="alert" hidden></p>
     <div class="form-actions"><button class="button primary" type="submit">Preview entries</button></div>
   </form>`);
@@ -831,13 +863,13 @@ async function previewImport(form, values) {
   stagedImport = csv;
   const ready = preview.rows.filter((row) => row.status === 'ready').length;
   const skipped = preview.rows.length - ready;
-  const rows = preview.rows.map((row) => `<li><strong>Row ${row.row}${row.contact ? ` · ${escape(row.contact)}` : ''}</strong>
-    <span>${row.status === 'ready' ? `${money(row.cents)} · Ready` : escape(row.issue)}</span></li>`).join('');
-  showDialog('Review CSV import', `<form class="form" data-form="import-save">
-    <p class="help">${ready} ready to import · ${skipped} to skip.</p>
+  const rows = preview.rows.map((row) => html`<li><strong>${t('Row {number}', { number: row.row })}${row.contact ? ` · ${escape(row.contact)}` : ''}</strong>
+    <span>${row.status === 'ready' ? `${money(row.cents)} · ${t('Ready')}` : escape(t(row.issue))}</span></li>`).join('');
+  showDialog(t('Review CSV import'), html`<form class="form" data-form="import-save">
+    <p class="help">${t('{ready} ready to import · {skipped} to skip.', { ready, skipped })}</p>
     <ul class="import-rows">${rows}</ul>
     <p class="form-error" role="alert" hidden></p>
-    <div class="form-actions"><button class="button primary" type="submit" ${ready ? '' : 'disabled'}>Import ${ready} ${ready === 1 ? 'entry' : 'entries'}</button>
+    <div class="form-actions"><button class="button primary" type="submit" ${ready ? '' : 'disabled'}>${t('Import {count}', { count: plural(ready, 'entry', 'entries') })}</button>
     <button class="button" type="button" data-action="import-edit">Edit CSV</button></div>
   </form>`);
 }
@@ -861,16 +893,16 @@ function showExport() {
   const query = searchText(byId('search').value);
   const count = ledgerResults(filter, query).length;
   const preferCurrent = count > 0 && (query || filter !== 'all' || (apiMode && !navigator.onLine));
-  showDialog('Export CSV', `<form class="form" data-form="export">
+  showDialog(t('Export CSV'), html`<form class="form" data-form="export">
     <fieldset class="export-options">
       <legend class="sr-only">Which entries to export</legend>
       <label class="export-option">
         <input type="radio" name="scope" value="full"${preferCurrent ? '' : ' checked'}>
-        <span><strong>Full ledger</strong><small>Every entry in your shop ledger.${apiMode ? ' Requires a connection.' : ''}</small></span>
+        <span><strong>Full ledger</strong><small>${t('Every entry in your shop ledger.')}${apiMode ? ' ' + t('Requires a connection.') : ''}</small></span>
       </label>
       <label class="export-option">
         <input type="radio" name="scope" value="current"${preferCurrent ? ' checked' : ''}${count ? '' : ' disabled'}>
-        <span><strong>Current results</strong><small>${count ? `${plural(count, 'entry', 'entries')} in your current view.` : 'No entries match your current view.'}</small></span>
+        <span><strong>Current results</strong><small>${count ? t('{count} in your current view.', { count: plural(count, 'entry', 'entries') }) : t('No entries match your current view.')}</small></span>
       </label>
     </fieldset>
     <p class="form-error" role="alert" hidden></p>
@@ -902,7 +934,7 @@ async function exportLedger(form, values) {
       showError(form, 'No entries match your current view.');
       return;
     }
-    downloadCsv(ledgerCsv(rows), `kwanja-results-${localDate()}.csv`, `${plural(rows.length, 'entry', 'entries')} exported.`);
+    downloadCsv(ledgerCsv(rows), `kwanja-results-${localDate()}.csv`, t('{count} exported.', { count: plural(rows.length, 'entry', 'entries') }));
     dialog.close();
     return;
   }
@@ -1015,7 +1047,7 @@ async function installApp() {
       return;
     } catch { /* Fall back to the browser's install steps. */ }
   }
-  showDialog('Install Kwanja', `<ul class="install-guide">
+  showDialog(t('Install Kwanja'), html`<ul class="install-guide">
     <li><strong>Android</strong><p>In Chrome, open the menu and choose Install app or Add to Home screen.</p></li>
     <li><strong>iPhone or iPad</strong><p>In Safari, open Share and choose Add to Home Screen. Turn on Open as Web App if shown, then tap Add.</p></li>
     <li><strong>Computer</strong><p>In Chrome or Edge, look for Install in the address bar or browser menu. In Safari on Mac, choose File → Add to Dock.</p></li>
@@ -1089,7 +1121,8 @@ async function finishDemo() {
 
 function stepError(step, message) {
   const error = welcome.querySelector(`[data-step="${step}"] .form-error`);
-  error.textContent = message;
+  error.dataset.message = message || '';
+  error.textContent = t(message);
   error.hidden = !message;
 }
 
@@ -1097,29 +1130,29 @@ function passwordAuthEnabled() {
   return authMode === 'clerk' && window.KWANJA_PASSWORD_AUTH === true;
 }
 
-function updateEmailScreen() {
+function updateEmailScreen(copyOnly = false) {
   const login = authIntent === 'login';
   const passwords = passwordAuthEnabled();
   const passwordLogin = login && passwords && loginMethod === 'password';
-  byId('auth-heading').textContent = login ? 'Log in to Kwanja' : 'Create your account';
-  byId('auth-description').textContent = passwordLogin ? 'Enter your email and password.'
-    : login ? 'Use your account email to get a fresh sign-in code.' : 'We’ll send a six-digit code to verify your email.';
-  byId('auth-switch-copy').textContent = login ? 'New to Kwanja?' : 'Already have an account?';
+  byId('auth-heading').textContent = t(login ? 'Log in to Kwanja' : 'Create your account');
+  byId('auth-description').textContent = t(passwordLogin ? 'Enter your email and password.'
+    : login ? 'Use your account email to get a fresh sign-in code.' : 'We’ll send a six-digit code to verify your email.');
+  byId('auth-switch-copy').textContent = t(login ? 'New to Kwanja?' : 'Already have an account?');
   const link = byId('auth-switch-link');
   link.href = login ? '#signup' : '#login';
-  link.textContent = login ? 'Create account' : 'Log in';
+  link.textContent = t(login ? 'Create account' : 'Log in');
   const form = welcome.querySelector('[data-form="email"]');
   const submit = form.querySelector('[type="submit"]');
+  submit.textContent = t(passwordLogin ? 'Log in' : 'Send code');
+  byId('password-options').querySelector('[data-action="switch-login-method"]').textContent = t(passwordLogin ? 'Use an email code' : 'Use a password');
+  if (copyOnly) return;
   submit.disabled = ['pending', 'unavailable'].includes(authMode) || (apiMode && !navigator.onLine);
-  submit.textContent = passwordLogin ? 'Log in' : 'Send code';
   const password = form.elements.password;
   byId('auth-password-field').hidden = !passwordLogin;
   password.disabled = !passwordLogin;
   password.required = passwordLogin;
   password.value = '';
   byId('password-options').hidden = !login || !passwords;
-  byId('password-options').querySelector('[data-action="switch-login-method"]').textContent =
-    passwordLogin ? 'Use an email code' : 'Use a password';
   byId('password-options').querySelector('[data-action="password-recovery"]').hidden = !passwordLogin;
   const providers = byId('auth-providers');
   providers.hidden = authMode !== 'clerk' || !configuredProviders.length;
@@ -1224,7 +1257,7 @@ async function bootApi() {
     workshopLedger = config.workshop_ledger === true;
     if (config.auth === 'demo') {
       authMode = 'demo';
-      if (/^#(overview|ledger|contacts)(\/|$)/.test(location.hash)) return finishDemo();
+      if (isWorkspaceRoute()) return finishDemo();
       return publicRoute(false);
     }
     if (config.auth !== 'clerk') throw new Error('Sign-in is not configured.');
@@ -1251,7 +1284,7 @@ async function afterSignIn() {
     if (authMode !== 'clerk' || !clerk?.session) return;
     hideWelcome();
     status.hidden = false;
-    status.innerHTML = `${escape(error.message)} <button class="button" type="button" data-action="retry-auth">Try again</button>`;
+    status.innerHTML = html`<span>${escape(t(error.message))}</span> <button class="button" type="button" data-action="retry-auth">Try again</button>`;
   }
 }
 
@@ -1315,7 +1348,7 @@ function showCodeStep(email, nextChallenge) {
   challenge = nextChallenge;
   pendingEmail = email;
   byId('otp-email').textContent = email;
-  byId('auth-code-heading').textContent = challenge?.secondFactor ? 'Verify this sign-in' : 'Check your email';
+  byId('auth-code-heading').textContent = t(challenge?.secondFactor ? 'Verify this sign-in' : 'Check your email');
   welcome.querySelector('[name="code"]').value = '';
   stepError('code', '');
   markCodeSent();
@@ -1346,7 +1379,7 @@ function renderResend() {
   const button = welcome.querySelector('[data-action="resend"]');
   const seconds = Math.max(0, Math.ceil((resendUntil - Date.now()) / 1000));
   button.disabled = seconds > 0;
-  button.textContent = seconds ? `Resend in ${seconds}s` : 'Resend code';
+  button.textContent = seconds ? t('Resend in {seconds}s', { seconds }) : t('Resend code');
   if (seconds) resendTimer = setTimeout(renderResend, 1000);
 }
 
@@ -1562,17 +1595,44 @@ dialog.addEventListener('close', () => {
   (returnFocus?.isConnected ? returnFocus : replacement || byId('main')).focus();
 });
 
-function togglePrivacy(button) {
+function renderPrivacy() {
+  const hidden = document.documentElement.classList.contains('hide-amounts');
+  const label = t(hidden ? 'Show amounts' : 'Hide amounts');
+  document.querySelectorAll('[data-action="privacy"]').forEach((button) => {
+    button.setAttribute('aria-pressed', String(hidden));
+    button.setAttribute('aria-label', label);
+    const icon = button.querySelector('use');
+    if (icon) icon.setAttribute('href', hidden ? '#i-eyeoff' : '#i-eye');
+    else button.textContent = label;
+  });
+}
+
+function togglePrivacy() {
   const hidden = document.documentElement.classList.toggle('hide-amounts');
-  button.setAttribute('aria-pressed', String(hidden));
-  button.setAttribute('aria-label', hidden ? 'Show amounts' : 'Hide amounts');
-  button.querySelector('use').setAttribute('href', hidden ? '#i-eyeoff' : '#i-eye');
+  renderPrivacy();
   try { localStorage.setItem('kwanja-hide-amounts', hidden ? '1' : '0'); } catch { /* storage unavailable */ }
 }
 
 try {
-  if (localStorage.getItem('kwanja-hide-amounts') === '1') togglePrivacy(document.querySelector('[data-action="privacy"]'));
+  document.documentElement.classList.toggle('hide-amounts', localStorage.getItem('kwanja-hide-amounts') === '1');
 } catch { /* storage unavailable */ }
+renderPrivacy();
+
+document.querySelectorAll('[data-language]').forEach((select) => {
+  select.addEventListener('change', () => {
+    language.change(select.value);
+    updateDateFormats();
+    renderPrivacy();
+    render();
+    renderRepairDemo();
+    updateEmailScreen(true);
+    byId('auth-code-heading').textContent = t(challenge?.secondFactor ? 'Verify this sign-in' : 'Check your email');
+    renderResend();
+    welcome.querySelectorAll('.form-error[data-message]').forEach((message) => {
+      message.textContent = t(message.dataset.message);
+    });
+  });
+});
 
 document.querySelector('.skip-link').addEventListener('click', (event) => {
   event.preventDefault();
@@ -1625,9 +1685,9 @@ window.addEventListener('online', () => {
   if (apiMode && authMode === 'unavailable') bootApi();
 });
 const launchUrl = new URL(location.href);
-if (pwaEnabled && navigator.onLine && document.querySelector('#overview-view .balance') && !launchUrl.searchParams.has('kwanja-refresh')) {
+if (pwaEnabled && navigator.onLine && !byId('settings-view') && launchUrl.searchParams.get('kwanja-refresh') !== 'preferences') {
   // Give a stale installed page one fresh navigation without losing its route.
-  launchUrl.searchParams.set('kwanja-refresh', 'wallets');
+  launchUrl.searchParams.set('kwanja-refresh', 'preferences');
   location.replace(launchUrl);
 } else {
   updateOfflineStatus();
@@ -1635,7 +1695,7 @@ if (pwaEnabled && navigator.onLine && document.querySelector('#overview-view .ba
   publicRoute(false);
   if (apiMode) {
     bootApi();
-  } else if (/^#(overview|ledger|contacts)(\/|$)/.test(location.hash)) {
+  } else if (isWorkspaceRoute()) {
     try { if (localStorage.getItem(onboardedKey)) finishDemo(); } catch { /* storage unavailable */ }
   }
 }

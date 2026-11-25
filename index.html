@@ -12,10 +12,11 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <link rel="stylesheet" href="ledger.ad17608ccd7491ed.css">
-  <link rel="stylesheet" href="public.17e0b27288328aa2.css">
+  <link rel="stylesheet" href="ledger.84a4a07a93ba0db3.css">
+  <link rel="stylesheet" href="public.aea5cc70a7d98e0f.css">
   <script src="config.e29e0d7d06cd27e2.js"></script>
-  <script src="ledger.a677a911a49a5657.js" defer></script>
+  <script src="language.14e132b3cb8e6790.js" defer></script>
+  <script src="ledger.244828767066239b.js" defer></script>
 </head>
 <body class="is-welcome">
   <svg xmlns="http://www.w3.org/2000/svg" class="icon-library" aria-hidden="true">
@@ -44,7 +45,8 @@
       <header class="topbar">
         <a class="brand" href="#overview" aria-label="Kwanja overview"><img src="logo/kwanja-lockup.svg" alt="Kwanja"></a>
         <span class="spacer"></span>
-        <button class="round privacy" type="button" data-action="privacy" aria-pressed="false" aria-label="Hide amounts"><svg class="icon"><use href="#i-eye"/></svg></button>
+        <button class="round privacy" id="overview-privacy" type="button" data-action="privacy" aria-pressed="false" aria-label="Hide amounts" hidden><svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg></button>
+        <a class="mini settings-link" href="#settings" data-nav="settings">Settings</a>
       </header>
 
       <p id="workspace-offline" class="connection-status offline-status" role="status" hidden>You’re offline. You can view and export current results from the ledger already loaded. Reconnect to save changes, import files, or export the full ledger.</p>
@@ -102,7 +104,15 @@
         <div id="ledger-list" class="cards"></div>
       </section>
 
-      <section id="contacts-view" aria-label="Contacts" hidden><h1 class="view-title">Contacts</h1><p class="view-sub" id="contacts-sub"></p><div id="contacts-list"></div>
+      <section id="contacts-view" aria-label="Contacts" hidden><h1 class="view-title">Contacts</h1><p class="view-sub" id="contacts-sub"></p><div id="contacts-list"></div></section>
+      <section id="settings-view" aria-labelledby="settings-title" hidden>
+        <h1 class="view-title" id="settings-title">Settings</h1>
+        <div class="contact-group settings-card"><h2>Language</h2>
+          <select class="language-choice" data-language aria-label="Language"><option value="en" lang="en">English</option><option value="sw" lang="sw">Kiswahili</option></select>
+        </div>
+        <div class="contact-group settings-card"><h2>Display</h2>
+          <button class="button" type="button" data-action="privacy" aria-pressed="false">Hide amounts</button>
+        </div>
         <div id="account" class="contact-group account" hidden><h2>Account</h2><p class="help" id="account-email"></p><button class="button" type="button" data-action="account-security" hidden>Manage password</button><button class="button" type="button" data-action="signout">Sign out</button></div>
         <div class="workspace-tools">
           <button class="button" type="button" data-action="walkthrough">Replay walkthrough</button>
@@ -134,6 +144,7 @@
         <section class="public-width public-hero" aria-labelledby="public-title">
           <div class="hero-copy">
             <p class="eyebrow"><span class="lime-dot"></span>For tech shops and repair shops in Nairobi</p>
+            <select class="language-choice" data-language aria-label="Language"><option value="en" lang="en">English</option><option value="sw" lang="sw">Kiswahili</option></select>
             <h1 id="public-title" tabindex="-1">Track repair balances. <mark>Get paid.</mark></h1>
             <p class="lede">Record deposits, pickup dates and device sales on credit. See what each customer still owes when they return to your shop.</p>
             <div class="hero-actions"><a class="pill primary large" href="#signup">Create account</a><a class="pill light large" href="#repair-demo">Try a repair demo</a></div>
@@ -206,7 +217,10 @@
         <div class="auth-pitch"><strong>Your business ledger</strong><p>Track repair deposits, device credit and parts bills.</p></div>
       </aside>
       <div class="auth-content">
-        <a class="auth-back" href="#home"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg>Back to Kwanja</a>
+        <div class="auth-top">
+          <a class="auth-back" href="#home"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg>Back to Kwanja</a>
+          <select class="language-choice" data-language aria-label="Language"><option value="en" lang="en">English</option><option value="sw" lang="sw">Kiswahili</option></select>
+        </div>
         <div class="auth-card">
           <div class="w-step" data-step="email" hidden>
             <h1 tabindex="-1" id="auth-heading">Create your account</h1>
