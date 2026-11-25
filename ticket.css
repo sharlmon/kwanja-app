@@ -249,3 +249,13 @@ button.ticket:active { transform: translateY(1px); }
 }
 .about-panel .about-copy { align-self: start; margin-top: 4px; }
 .about-panel { row-gap: 14px; }
+
+/* photos: real people, credited */
+.photo-band { margin-top: clamp(8px, 3vw, 28px); }
+.photo-band figure, .how-photo, .about-photo { margin: 0; }
+.photo-band img { display: block; width: 100%; height: clamp(220px, 38vw, 460px); object-fit: cover; object-position: 50% 40%; border-radius: 14px; border: 1px solid var(--rule); }
+.photo-band figcaption, .how-photo figcaption { margin-top: 10px; color: var(--muted); font-size: .78rem; line-height: 1.4; }
+.photo-band figcaption a, .how-photo figcaption a { color: var(--ink2); text-decoration: underline; text-underline-offset: 2px; }
+.how-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 380px); gap: clamp(24px, 4vw, 56px); align-items: start; }
+.how-photo img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: 45% 50%; border-radius: 14px; border: 1px solid var(--rule); }
+@media (max-width: 860px) { .how-grid { grid-template-columns: 1fr; } .how-photo img { aspect-ratio: 3 / 2; } }

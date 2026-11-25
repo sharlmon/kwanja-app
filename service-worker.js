@@ -2,10 +2,10 @@
 
 // The Pages build fills in the exact URLs shipped with this release.
 const cachePrefix = `kwanja-shell:${self.registration.scope}:`;
-const cacheName = cachePrefix + 'de465552b3543a1b';
-const shellUrls = new Set(["apple-touch-icon.png", "brands/mpesa.svg", "config.e24d0cc4c4e9f287.js", "fonts/dm-sans-latin.woff2", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "index.904ca46e9a6bf5f0.html", "language.40f737a6f6416bc0.js", "ledger.324f731473cedc7e.js", "ledger.84a4a07a93ba0db3.css", "logo/kwanja-lockup-mono-black.svg", "logo/kwanja-lockup-mono-white.svg", "logo/kwanja-lockup-reverse.svg", "logo/kwanja-lockup.svg", "logo/kwanja-mark.svg", "logo/kwanja-symbol.svg", "logo/kwanja-wordmark-mono.svg", "logo/kwanja-wordmark.svg", "manifest.webmanifest", "photos/technician-at-work.jpg", "public.aea5cc70a7d98e0f.css", "ticket.d5986cea9d2f3a52.css"].map((path) => new URL(path, self.registration.scope).href));
+const cacheName = cachePrefix + 'd6df120a49e4f8ee';
+const shellUrls = new Set(["apple-touch-icon.png", "brands/mpesa.svg", "config.e24d0cc4c4e9f287.js", "fonts/dm-sans-latin.woff2", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "index.bccc2aae1ebce657.html", "language.40f737a6f6416bc0.js", "ledger.324f731473cedc7e.js", "ledger.84a4a07a93ba0db3.css", "logo/kwanja-lockup-mono-black.svg", "logo/kwanja-lockup-mono-white.svg", "logo/kwanja-lockup-reverse.svg", "logo/kwanja-lockup.svg", "logo/kwanja-mark.svg", "logo/kwanja-symbol.svg", "logo/kwanja-wordmark-mono.svg", "logo/kwanja-wordmark.svg", "manifest.webmanifest", "photos/mpesa-agent-nairobi.jpg", "photos/technician-at-work.jpg", "photos/technicians-soldering.jpg", "public.aea5cc70a7d98e0f.css", "ticket.0779cdd5b7acdce8.css"].map((path) => new URL(path, self.registration.scope).href));
 const indexUrl = new URL('index.html', self.registration.scope).href;
-const offlineIndex = new URL('index.904ca46e9a6bf5f0.html', self.registration.scope).href;
+const offlineIndex = new URL('index.bccc2aae1ebce657.html', self.registration.scope).href;
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
